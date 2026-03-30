@@ -1,64 +1,128 @@
-import Image from "next/image";
+"use client";
+
+import Navbar from "@/components/Navbar";
+import Link from "next/link";
+
+// VULNERABILITY (Easy — 50pts): Flag hidden in HTML source comment below.
+// Right-click → View Page Source → Ctrl+F → BREACH
+
+const QUICK_LINKS = [
+  { href: "/login", icon: "🔑", label: "Student Login", desc: "Access your account" },
+  { href: "/notices", icon: "📋", label: "Notice Board", desc: "School announcements" },
+  { href: "/leaderboard", icon: "🏆", label: "Leaderboard", desc: "Breach@trix live scores" },
+  { href: "/submit", icon: "🚩", label: "Submit Flag", desc: "Claim your points" },
+  { href: "/assignments", icon: "📝", label: "Assignments", desc: "Pending class work" },
+  { href: "/resources", icon: "📚", label: "Resources", desc: "Study materials" },
+];
+
+const ANNOUNCEMENTS = [
+  { icon: "📅", text: "PTM scheduled — 15th April" },
+  { icon: "🏆", text: "Annual Sports Day — 20th April" },
+  { icon: "📋", text: "Exam timetable now available" },
+  { icon: "⚔️", text: "Breach@trix Finals — 8th May" },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-[#0a0a0a] text-slate-200 selection:bg-cyan-500/30">
+      {/* =====================================================
+          Developer Notes — TODO: REMOVE BEFORE GO-LIVE
+          =====================================================
+          Admin panel: /admin
+          Admin creds backup: admin / Admin@Campus2025
+          Flag: BREACH{s0urce_c0de_n3v3r_li3s}
+          DB location: ./campus.db
+          Secrets: see /.env
+          JWT_SECRET is set to "secret" for now — change this!
+          =====================================================
+      */}
+      <Navbar />
+
+      <main className="max-w-5xl mx-auto px-6 py-12">
+        
+        {/* Hero Section */}
+        <header className="mb-12">
+          <div className="text-cyan-400 text-xs font-bold tracking-[0.2em] uppercase mb-3">
+            Greenfield International School
+          </div>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-4">
+            CampusCare <span className="text-slate-500 font-light">Student Portal</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">
+            Manage your academic life — access notices, assignments, and resources in a secure, unified environment.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </header>
+
+        {/* Quick Access Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+          {QUICK_LINKS.map((card) => (
+            <Link key={card.href} href={card.href} className="group">
+              <div className="h-full p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">
+                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">{card.icon}</div>
+                <h3 className="text-white font-semibold mb-1">{card.label}</h3>
+                <p className="text-slate-400 text-sm">{card.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </section>
+
+        {/* Secondary Info Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Announcements Card */}
+          <div className="p-6 rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Recent Announcements</h2>
+            <div className="space-y-4">
+              {ANNOUNCEMENTS.map((a, i) => (
+                <div key={i} className="flex items-center gap-4 text-sm group cursor-default">
+                  <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 group-hover:bg-cyan-500/20 transition-colors">
+                    {a.icon}
+                  </span>
+                  <span className="text-slate-300">{a.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* System Info Card */}
+          <div className="p-6 rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">System Status</h2>
+            <div className="space-y-3">
+              {[
+                { label: "Portal Version", value: "v2.3.1" },
+                { label: "Framework", value: "Next.js 14" },
+                { label: "Database", value: "SQLite (campus.db)", highlight: true },
+                { label: "Environment", value: "DEVELOPMENT", status: "bg-yellow-500/20 text-yellow-500" },
+                { label: "Debug Mode", value: "ENABLED", status: "bg-red-500/20 text-red-500" },
+              ].map((row, i) => (
+                <div key={i} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0">
+                  <span className="text-sm text-slate-500">{row.label}</span>
+                  {row.status ? (
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${row.status}`}>
+                      {row.value}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-slate-300 font-mono">{row.value}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-slate-500">
+            © 2026 Greenfield International School · <span className="text-slate-600">Secure Node OS</span>
+          </p>
+          <div className="flex gap-6">
+            {["Login", "Notices", "Leaderboard", "Register"].map((link) => (
+              <Link key={link} href={`/${link.toLowerCase()}`} className="text-xs text-slate-500 hover:text-cyan-400 transition-colors">
+                {link}
+              </Link>
+            ))}
+          </div>
+        </footer>
       </main>
     </div>
   );
