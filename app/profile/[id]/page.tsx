@@ -155,7 +155,7 @@ export default function ProfilePage() {
 
             {/* IDOR Navigation Controls */}
             <div className="flex items-center justify-between pt-4">
-              <div className="flex gap-2">
+              {/* <div className="flex gap-2">
                 <Link 
                   href={`/profile/${Math.max(1, Number(id) - 1)}`}
                   className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all active:scale-95"
@@ -168,7 +168,7 @@ export default function ProfilePage() {
                 >
                   NEXT <ChevronRight className="w-4 h-4 text-emerald-500" />
                 </Link>
-              </div>
+              </div> */}
               
               <div className="text-[10px] font-mono text-zinc-600 bg-black px-3 py-1.5 rounded-lg border border-white/5">
                 GET /api/profile/<span className="text-emerald-500">{id}</span>
@@ -180,3 +180,21 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+// VULENERABILITY: Insecure Direct Object Reference (IDOR) on /api/profile/[id]
+
+
+//1. What an attacker does: Log in as student1 (ID 3), then click PREV twice to reach ID 1 — which is the admin account. No tools needed, just clicking arrows. The API /api/profile/[id] never checks whether the requesting user's ID matches the requested ID.
+// What they get: Full name, email, role, admission number, class, section of every user including admin and staff.
+
+// 2. Sensitive Data Exposure via Profile Fields
+// The API returns and the page renders:
+
+// email — admin's internal email address
+// role — confirms who is admin vs student vs staff
+// admission_no — a unique identifier useful for social engineering
+
+// For ID 1 specifically, you see admin@campuscare.local + role: admin + ADM001 — enough to target the admin account precisely.
+
+
+
