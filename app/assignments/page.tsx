@@ -1,197 +1,169 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 
 interface Assignment {
-  id: number; title: string; subject: string;
-  class: string; due_date: string; description: string;
+  id: number;
+  title: string;
+  subject: string;
+  class: string;
+  due_date: string;
+  description: string;
 }
 
-const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
-  "Computer Science": { bg: "#0c2340", text: "#93c5fd" },
-  "Mathematics":      { bg: "#1a1a0a", text: "#fde047" },
-  "English":          { bg: "#0a1c14", text: "#4ade80" },
-  "Chemistry":        { bg: "#200a0a", text: "#fca5a5" },
-  "Physics":          { bg: "#1a0a20", text: "#d8b4fe" },
-  "History":          { bg: "#1c1200", text: "#fdba74" },
+const SUBJECT_THEMES: Record<string, string> = {
+  "Computer Science": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  Mathematics: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  English: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  Chemistry: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  Physics: "bg-purple-500/10 text-purple-400 border-purple-400/20",
+  History: "bg-orange-500/10 text-orange-400 border-orange-500/20",
 };
 
 function daysUntil(dateStr: string) {
-  const due  = new Date(dateStr);
-  const now  = new Date();
+  const due = new Date(dateStr);
+  const now = new Date();
   due.setHours(0, 0, 0, 0);
   now.setHours(0, 0, 0, 0);
   return Math.ceil((due.getTime() - now.getTime()) / 86400000);
 }
 
-function urgencyStyle(days: number): { color: string; label: string; bg: string } {
-  if (days < 0)  return { color: "#fca5a5", label: "Overdue",      bg: "rgba(239,68,68,0.08)" };
-  if (days === 0) return { color: "#fde047", label: "Due today",    bg: "rgba(234,179,8,0.08)" };
-  if (days <= 2)  return { color: "#fb923c", label: `${days}d left`, bg: "rgba(251,146,60,0.08)" };
-  if (days <= 7)  return { color: "#fde047", label: `${days}d left`, bg: "rgba(234,179,8,0.05)" };
-  return               { color: "var(--muted)", label: `${days}d left`, bg: "transparent" };
+function getUrgency(days: number) {
+  if (days < 0) return { label: "Overdue", style: "text-red-400 bg-red-500/10" };
+  if (days === 0) return { label: "Due Today", style: "text-yellow-400 bg-yellow-500/10" };
+  if (days <= 2) return { label: `${days}d left`, style: "text-orange-400 bg-orange-500/10" };
+  return { label: `${days}d left`, style: "text-zinc-500 bg-zinc-500/5" };
 }
 
 export default function AssignmentsPage() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [filter, setFilter]           = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
 
   const CLASSES = ["All", "X", "XI", "XII"];
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
-    if (!match) { router.push("/login"); return; }
+    if (!match) {
+      router.push("/login");
+      return;
+    }
     fetch("/api/assignments")
-      .then(r => r.json())
-      .then(d => { setAssignments(d.assignments || []); setLoading(false); });
-  }, []);
+      .then((r) => r.json())
+      .then((d) => {
+        setAssignments(d.assignments || []);
+        setLoading(false);
+      });
+  }, [router]);
 
-  const filtered = filter === "All"
-    ? assignments
-    : assignments.filter(a => a.class === filter);
+  const filtered = filter === "All" ? assignments : assignments.filter((a) => a.class === filter);
+  const overdueCount = assignments.filter((a) => daysUntil(a.due_date) < 0).length;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#09090b] text-zinc-100">
       <Navbar />
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 24px" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        {/* Header Section */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: "bold", marginBottom: 4, letterSpacing: -0.5 }}>
-              Assignments
-            </h1>
-            <p style={{ color: "var(--muted)", fontSize: 13 }}>
-              {assignments.length} assignment{assignments.length !== 1 ? "s" : ""} across all classes
+            <h1 className="text-3xl font-bold tracking-tight mb-2">Assignments</h1>
+            <p className="text-zinc-400 text-sm">
+              Manage and track tasks for <span className="text-zinc-200">{assignments.length}</span> active assignments.
             </p>
           </div>
-          {/* Overdue count */}
-          {assignments.filter(a => daysUntil(a.due_date) < 0).length > 0 && (
-            <div style={{
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.25)",
-              borderRadius: 6,
-              padding: "6px 14px",
-              fontSize: 12,
-              color: "#fca5a5",
-            }}>
-              ⚠ {assignments.filter(a => daysUntil(a.due_date) < 0).length} overdue
+
+          {overdueCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium animate-pulse">
+              <span>⚠️ {overdueCount} Overdue</span>
             </div>
           )}
-        </div>
+        </header>
 
-        {/* Class filter */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-          {CLASSES.map(c => (
-            <button key={c} onClick={() => setFilter(c)}
-              style={{
-                background: filter === c ? "rgba(34,197,94,0.12)" : "var(--surface)",
-                color: filter === c ? "var(--accent)" : "var(--muted)",
-                border: filter === c ? "1px solid rgba(34,197,94,0.3)" : "1px solid var(--border)",
-                borderRadius: 5, padding: "6px 16px",
-                fontSize: 13, fontFamily: "monospace", cursor: "pointer",
-                transition: "all 0.15s",
-              }}
+        {/* Filters */}
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+          {CLASSES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setFilter(c)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap border ${
+                filter === c
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+              }`}
             >
               {c === "All" ? "All Classes" : `Class ${c}`}
             </button>
           ))}
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[1,2,3,4].map(i => (
-              <div key={i} style={{
-                height: 80, background: "var(--surface)",
-                border: "1px solid var(--border)", borderRadius: 8,
-                opacity: 0.5 - i * 0.08,
-              }} />
-            ))}
-          </div>
-        )}
+        {/* Content Grid */}
+        <div className="space-y-4">
+          {loading ? (
+            /* Skeleton Loading */
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-24 w-full bg-zinc-900/50 border border-zinc-800 rounded-xl animate-pulse" />
+            ))
+          ) : filtered.length === 0 ? (
+            /* Empty State */
+            <div className="text-center py-20 border border-dashed border-zinc-800 rounded-2xl">
+              <div className="text-4xl mb-4">📂</div>
+              <h3 className="text-zinc-200 font-medium">No assignments found</h3>
+              <p className="text-zinc-500 text-sm">Everything looks clear for Class {filter}.</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filtered.map((a) => {
+                const days = daysUntil(a.due_date);
+                const urg = getUrgency(days);
+                const theme = SUBJECT_THEMES[a.subject] || "bg-zinc-500/10 text-zinc-400 border-zinc-800";
 
-        {/* Empty */}
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)", border: "1px dashed var(--border)", borderRadius: 8 }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📝</div>
-            <div style={{ fontSize: 15 }}>No assignments for Class {filter}</div>
-          </div>
-        )}
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    key={a.id}
+                    className="group relative flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl hover:bg-zinc-900/80 hover:border-zinc-700 transition-all cursor-default"
+                  >
+                    <div className="flex-1 pr-4">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-zinc-100">{a.title}</h3>
+                        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${theme}`}>
+                          {a.subject}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                          Class {a.class}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">
+                        {a.description}
+                      </p>
+                    </div>
 
-        {/* Assignment cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {filtered.map(a => {
-            const days = daysUntil(a.due_date);
-            const urg  = urgencyStyle(days);
-            const sub  = SUBJECT_COLORS[a.subject] ?? { bg: "#18181b", text: "var(--muted)" };
-
-            return (
-              <div key={a.id} style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 8,
-                padding: "16px 20px",
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 16,
-                alignItems: "start",
-                transition: "border-color 0.15s",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
-              >
-                <div>
-                  {/* Title + subject */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 15, fontWeight: "bold" }}>{a.title}</span>
-                    <span style={{
-                      fontSize: 11, fontWeight: "bold",
-                      background: sub.bg, color: sub.text,
-                      borderRadius: 3, padding: "2px 8px",
-                    }}>
-                      {a.subject}
-                    </span>
-                    <span style={{
-                      fontSize: 11,
-                      background: "rgba(59,130,246,0.1)",
-                      color: "#93c5fd",
-                      border: "1px solid rgba(59,130,246,0.2)",
-                      borderRadius: 3, padding: "2px 8px",
-                    }}>
-                      Class {a.class}
-                    </span>
-                  </div>
-                  {/* Description */}
-                  <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                    {a.description}
-                  </p>
-                </div>
-
-                {/* Due date */}
-                <div style={{
-                  textAlign: "right",
-                  background: urg.bg,
-                  borderRadius: 6,
-                  padding: "8px 14px",
-                  minWidth: 110,
-                }}>
-                  <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Due</div>
-                  <div style={{ fontSize: 13, fontWeight: "bold", fontFamily: "monospace" }}>
-                    {new Date(a.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                  </div>
-                  <div style={{ fontSize: 12, color: urg.color, marginTop: 2 }}>
-                    {urg.label}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    <div className="mt-4 sm:mt-0 flex sm:flex-col items-center sm:items-end justify-between gap-1">
+                      <div className="text-[11px] text-zinc-500 font-medium sm:block hidden">DUE DATE</div>
+                      <div className="text-sm font-mono font-bold text-zinc-200">
+                        {new Date(a.due_date).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </div>
+                      <div className={`mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${urg.style}`}>
+                        {urg.label}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }

@@ -41,26 +41,26 @@ export default function RegisterPage() {
     setServerErr("");
   };
 
-  const onUsernameChange = (val: string) => {
-    set("username", val);
-    setUStatus("idle");
-    if (usernameTimer) clearTimeout(usernameTimer);
-    if (val.trim().length < 3) return;
+  // const onUsernameChange = (val: string) => {
+  //   set("username", val);
+  //   setUStatus("idle");
+  //   if (usernameTimer) clearTimeout(usernameTimer);
+  //   if (val.trim().length < 3) return;
 
-    const t = setTimeout(async () => {
-      setUStatus("checking");
-      try {
-        const res = await fetch("/api/check-username", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: val.trim() }),
-        });
-        const data = await res.json();
-        setUStatus(data.available ? "available" : "taken");
-      } catch { setUStatus("idle"); }
-    }, 600);
-    setUTimer(t);
-  };
+  //   const t = setTimeout(async () => {
+  //     setUStatus("checking");
+  //     try {
+  //       const res = await fetch("/api/check-username", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ username: val.trim() }),
+  //       });
+  //       const data = await res.json();
+  //       setUStatus(data.available ? "available" : "taken");
+  //     } catch { setUStatus("idle"); }
+  //   }, 600);
+  //   setUTimer(t);
+  // };
 
   const validate = (): boolean => {
     const e: FieldError = {};
@@ -76,15 +76,20 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+     console.log("SUBMIT CLICKED");
+    if (!validate()) {
+  console.log("VALIDATION FAILED", errors);
+  return;
+}
     setLoading(true);
     setServerErr("");
 
     const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
+   console.log("RESPONSE:", res);
 
     const data = await res.json();
     if (res.ok && data.success) {
@@ -140,7 +145,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   value={form.username}
-                  onChange={e => onUsernameChange(e.target.value)}
+                 onChange={e => set("username", e.target.value)}
                   placeholder="aryan.k"
                   className={`w-full bg-black border rounded-lg px-4 py-3 text-sm font-mono outline-none transition-all ${
                     usernameStatus === "taken" ? "border-red-500/50" : 

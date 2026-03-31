@@ -50,7 +50,7 @@ export default function Navbar() {
               <NavGroup links={[
                 { href: "/dashboard", label: "Dashboard" },
                 { href: "/notices", label: "Notices" },
-                { href: "/search", label: "Students" },
+                { href: "/search", label: "Search" },
                 { href: "/assignments", label: "Assignments" },
                 { href: "/submit", label: "Submit Flag" },
                 { href: "/leaderboard", label: "Leaderboard" },
