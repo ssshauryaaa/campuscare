@@ -45,12 +45,35 @@ export function getSessionUser(): TokenPayload | null {
 }
 
 // For use in API Route Handlers (Request object)
+// Handles quoted values, URL-encoded values, and plain JWTs
 export function getSessionUserFromRequest(req: Request): TokenPayload | null {
   try {
     const cookieHeader = req.headers.get("cookie") || "";
-    const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
-    if (!match) return null;
-    return verifyToken(decodeURIComponent(match[1]));
+
+    // Parse all cookies into a map first (handles edge cases better than a single regex)
+    const cookieMap: Record<string, string> = {};
+    cookieHeader.split(";").forEach((part) => {
+      const eqIdx = part.indexOf("=");
+      if (eqIdx === -1) return;
+      const key = part.slice(0, eqIdx).trim();
+      let val = part.slice(eqIdx + 1).trim();
+
+      // Strip surrounding quotes (Next.js adds these for values with special chars)
+      if ((val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+
+      // URL-decode
+      try { val = decodeURIComponent(val); } catch { /* already plain */ }
+
+      cookieMap[key] = val;
+    });
+
+    const token = cookieMap["token"];
+    if (!token) return null;
+
+    return verifyToken(token);
   } catch {
     return null;
   }

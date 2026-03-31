@@ -1,34 +1,34 @@
 "use client";
-// VULNERABILITY: IDOR — change [id] in URL to view any user's profile
-// No server-side authorization check that id === session user id
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { 
+  User, Mail, Shield, School, Hash, Key, 
+  ChevronLeft, ChevronRight, AlertTriangle, Fingerprint 
+} from "lucide-react";
 
 interface Profile {
   id: number; username: string; email: string; full_name: string;
   class: string; section: string; admission_no: string; role: string;
 }
 
-function RoleColor(role: string) {
-  if (role === "admin")  return { bg: "#7f1d1d", text: "#fca5a5", border: "#991b1b" };
-  if (role === "staff")  return { bg: "#713f12", text: "#fde047", border: "#854d0e" };
-  return                        { bg: "#1e3a5f", text: "#93c5fd", border: "#1d4ed8" };
-}
+const ROLE_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
+  admin: { color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/30" },
+  staff: { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
+  student: { color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/30" },
+};
 
 export default function ProfilePage() {
   const { id } = useParams();
   const router = useRouter();
-  const [profile, setProfile]       = useState<Profile | null>(null);
-  const [error, setError]           = useState("");
-  const [loading, setLoading]       = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [sessionUserId, setSession] = useState<number | null>(null);
-  const [mounted, setMounted]       = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
     if (!match) { router.push("/login"); return; }
     try {
@@ -37,255 +37,146 @@ export default function ProfilePage() {
     } catch { router.push("/login"); return; }
 
     if (!id) return;
+    setLoading(true);
     fetch(`/api/profile/${id}`)
       .then(r => r.json())
       .then(d => {
-        if (d.profile) setProfile(d.profile);
-        else setError(d.error || "User not found");
+        if (d.profile) {
+          setProfile(d.profile);
+          setError("");
+        } else {
+          setError(d.error || "User not found");
+          setProfile(null);
+        }
         setLoading(false);
       });
-  }, [id]);
+  }, [id, router]);
 
   const isOwn = sessionUserId === profile?.id;
-  const roleStyle = profile ? RoleColor(profile.role) : null;
+  const currentRole = profile?.role || "student";
+  const theme = ROLE_CONFIG[currentRole] || ROLE_CONFIG.student;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#0a0a0c] text-zinc-300">
       <Navbar />
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "40px 24px" }}>
-
-        {/* Breadcrumb */}
-        <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 24, fontFamily: "monospace" }}>
-          <Link href="/search" style={{ color: "var(--muted)" }}>Students</Link>
-          <span style={{ margin: "0 8px" }}>›</span>
-          <span style={{ color: "var(--text)" }}>Profile #{id}</span>
+      
+      <main className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        
+        {/* Navigation & Breadcrumbs */}
+        <div className="flex items-center justify-between">
+          <nav className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+            <Link href="/search" className="hover:text-emerald-500 transition-colors">Directory</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-zinc-300">User_Record_{id}</span>
+          </nav>
+          
           {!isOwn && profile && (
-            <span style={{
-              marginLeft: 10,
-              fontSize: 10,
-              color: "var(--red)",
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.2)",
-              borderRadius: 3,
-              padding: "2px 6px",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-            }}>
-              ⚠ Not your profile
-            </span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded text-[10px] font-bold text-rose-500 animate-pulse">
+              <AlertTriangle className="w-3 h-3" /> UNAUTHORIZED_VIEW
+            </div>
           )}
         </div>
 
-        {/* Loading */}
+        {/* Loading State */}
         {loading && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ height: 120, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, opacity: 0.5 }} />
-            <div style={{ height: 200, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, opacity: 0.4 }} />
+          <div className="space-y-4 animate-pulse">
+            <div className="h-32 bg-zinc-900 rounded-2xl border border-white/5" />
+            <div className="h-64 bg-zinc-900 rounded-2xl border border-white/5" />
           </div>
         )}
 
-        {/* Error */}
+        {/* Error State */}
         {error && !loading && (
-          <div>
-            <div style={{
-              background: "#1c0a0a", border: "1px solid #7f1d1d",
-              borderRadius: 8, padding: 24, marginBottom: 16, textAlign: "center",
-            }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>⚠</div>
-              <div style={{ color: "#fca5a5", fontSize: 15, marginBottom: 6 }}>User not found</div>
-              <div style={{ color: "var(--muted)", fontSize: 13 }}>{error}</div>
+          <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-12 text-center space-y-4">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto">
+              <Shield className="w-8 h-8 text-rose-500" />
             </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace", textAlign: "center" }}>
-              Try IDs 1–6 to enumerate all users
+            <div>
+              <h2 className="text-white font-bold text-lg">Null Reference Error</h2>
+              <p className="text-zinc-500 text-sm font-mono mt-1">Object ID {id} returned 404.</p>
             </div>
+            <p className="text-xs text-zinc-600 italic font-mono">Hint: Try sequential ID enumeration (1-10)...</p>
           </div>
         )}
 
-        {/* Profile card */}
         {profile && !loading && (
-          <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.3s" }}>
-
-            {/* Hero banner */}
-            <div style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "8px 8px 0 0",
-              padding: "28px 28px 20px",
-              borderBottom: "none",
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              {/* Background grid pattern */}
-              <div style={{
-                position: "absolute", inset: 0,
-                backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(255,255,255,0.02) 24px, rgba(255,255,255,0.02) 25px), repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(255,255,255,0.02) 24px, rgba(255,255,255,0.02) 25px)",
-                pointerEvents: "none",
-              }} />
-
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 20, position: "relative" }}>
-                {/* Avatar */}
-                <div style={{
-                  width: 64, height: 64, borderRadius: 10,
-                  background: roleStyle ? `rgba(${profile.role === "admin" ? "239,68,68" : profile.role === "staff" ? "234,179,8" : "59,130,246"},0.15)` : "#1e1e22",
-                  border: `2px solid ${roleStyle?.border}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 22, fontWeight: "bold",
-                  color: roleStyle?.text,
-                  fontFamily: "monospace",
-                  flexShrink: 0,
-                }}>
-                  {(profile.full_name || profile.username).split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* Header Card */}
+            <div className="relative overflow-hidden bg-zinc-900 border border-white/5 rounded-2xl p-8">
+              {/* Grid Overlay */}
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+                   style={{ backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`, backgroundSize: '24px 24px' }} />
+              
+              <div className="relative flex items-center gap-6">
+                <div className={`w-20 h-20 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${theme.border} ${theme.bg} ${theme.color}`}>
+                  {profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase()}
                 </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-                    <h1 style={{ fontSize: 20, fontWeight: "bold", margin: 0 }}>
-                      {profile.full_name || profile.username}
-                    </h1>
-                    <span style={{
-                      fontSize: 11, fontWeight: "bold",
-                      background: roleStyle?.bg,
-                      color: roleStyle?.text,
-                      border: `1px solid ${roleStyle?.border}`,
-                      borderRadius: 4,
-                      padding: "2px 8px",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                    }}>
+                
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-black text-white tracking-tight">{profile.full_name}</h1>
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${theme.bg} ${theme.color} ${theme.border}`}>
                       {profile.role}
                     </span>
-                    {isOwn && (
-                      <span style={{
-                        fontSize: 11, color: "var(--accent)",
-                        background: "rgba(34,197,94,0.1)",
-                        border: "1px solid rgba(34,197,94,0.2)",
-                        borderRadius: 4, padding: "2px 8px",
-                      }}>You</span>
-                    )}
                   </div>
-                  <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "monospace" }}>
-                    @{profile.username}
-                  </div>
-                  <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
-                    {profile.email}
-                  </div>
+                  <p className="text-zinc-500 font-mono text-sm">@{profile.username}</p>
                 </div>
 
-                {/* ID badge */}
-                <div style={{
-                  background: "var(--bg)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "6px 12px",
-                  textAlign: "center",
-                  flexShrink: 0,
-                }}>
-                  <div style={{ fontSize: 18, fontWeight: "bold", fontFamily: "monospace", color: "var(--muted)" }}>
-                    #{profile.id}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                    User ID
-                  </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-zinc-800 font-mono leading-none">#{profile.id}</div>
+                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">Record_Index</div>
                 </div>
               </div>
             </div>
 
-            {/* Details */}
-            <div style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "0 0 8px 8px",
-              overflow: "hidden",
-            }}>
-              {[
-                { label: "Full Name",     value: profile.full_name,     icon: "👤" },
-                { label: "Username",      value: profile.username,       icon: "🔑", mono: true },
-                { label: "Email",         value: profile.email,          icon: "✉️" },
-                { label: "Role",          value: profile.role,           icon: "🎭" },
-                { label: "Class",         value: profile.class || "—",   icon: "🏫" },
-                { label: "Section",       value: profile.section || "—", icon: "📌" },
-                { label: "Admission No",  value: profile.admission_no,   icon: "🪪", mono: true },
-              ].map((row, i, arr) => (
-                <div
-                  key={row.label}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "200px 1fr",
-                    borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <div style={{
-                    padding: "12px 20px",
-                    fontSize: 12,
-                    color: "var(--muted)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    borderRight: "1px solid var(--border)",
-                    background: "rgba(0,0,0,0.15)",
-                  }}>
-                    <span>{row.icon}</span>
-                    <span style={{ textTransform: "uppercase", letterSpacing: 0.5 }}>{row.label}</span>
+            {/* Information Grid */}
+            <div className="bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+              <div className="grid grid-cols-1 divide-y divide-white/5">
+                {[
+                  { label: "Email Address", value: profile.email, icon: Mail },
+                  { label: "Admission Number", value: profile.admission_no, icon: Fingerprint, mono: true },
+                  { label: "Class Designation", value: profile.class || "Not Assigned", icon: School },
+                  { label: "Section", value: profile.section || "N/A", icon: Hash },
+                  { label: "Security Role", value: profile.role, icon: Shield, color: theme.color },
+                ].map((item) => (
+                  <div key={item.label} className="grid grid-cols-3 group hover:bg-white/[0.01] transition-colors">
+                    <div className="col-span-1 p-4 bg-white/[0.02] border-r border-white/5 flex items-center gap-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                      <item.icon className="w-3.5 h-3.5 opacity-50" />
+                      {item.label}
+                    </div>
+                    <div className={`col-span-2 p-4 text-sm ${item.mono ? 'font-mono' : ''} ${item.color || 'text-zinc-300'}`}>
+                      {item.value}
+                    </div>
                   </div>
-                  <div style={{
-                    padding: "12px 20px",
-                    fontSize: 14,
-                    fontFamily: row.mono ? "monospace" : undefined,
-                    color: row.label === "Role" ? roleStyle?.text : "var(--text)",
-                  }}>
-                    {row.value}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            {/* IDOR nav */}
-            <div style={{
-              marginTop: 16,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                {Number(id) > 1 && (
-                  <Link
-                    href={`/profile/${Number(id) - 1}`}
-                    style={{
-                      fontSize: 12, color: "var(--muted)",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 4, padding: "5px 12px",
-                      textDecoration: "none",
-                      fontFamily: "monospace",
-                    }}
-                  >
-                    ← #{Number(id) - 1}
-                  </Link>
-                )}
-                <Link
-                  href={`/profile/${Number(id) + 1}`}
-                  style={{
-                    fontSize: 12, color: "var(--muted)",
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 4, padding: "5px 12px",
-                    textDecoration: "none",
-                    fontFamily: "monospace",
-                  }}
+            {/* IDOR Navigation Controls */}
+            <div className="flex items-center justify-between pt-4">
+              <div className="flex gap-2">
+                <Link 
+                  href={`/profile/${Math.max(1, Number(id) - 1)}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all active:scale-95"
                 >
-                  #{Number(id) + 1} →
+                  <ChevronLeft className="w-4 h-4 text-emerald-500" /> PREV
+                </Link>
+                <Link 
+                  href={`/profile/${Number(id) + 1}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all active:scale-95"
+                >
+                  NEXT <ChevronRight className="w-4 h-4 text-emerald-500" />
                 </Link>
               </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
-                /profile/<span style={{ color: "var(--accent)" }}>{id}</span>
+              
+              <div className="text-[10px] font-mono text-zinc-600 bg-black px-3 py-1.5 rounded-lg border border-white/5">
+                GET /api/profile/<span className="text-emerald-500">{id}</span>
               </div>
             </div>
           </div>
         )}
-      </div>
-    </>
+      </main>
+    </div>
   );
 }
