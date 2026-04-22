@@ -33,9 +33,9 @@ export function verifyToken(token: string): TokenPayload | null {
 }
 
 // For use in Server Components / Route Handlers
-export function getSessionUser(): TokenPayload | null {
+export async function getSessionUser(): Promise<TokenPayload | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     if (!token) return null;
     return verifyToken(token);

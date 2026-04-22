@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  team-a:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./instances/team-a:/app
+      - team-a-modules:/app/node_modules   # ← isolated node_modules per team
+    environment:
+      - TEAM_ID=team-a
+    restart: unless-stopped
+
+  team-b:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./instances/team-b:/app
+      - team-b-modules:/app/node_modules
+    environment:
+      - TEAM_ID=team-b
+    restart: unless-stopped
+
+  team-c:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./instances/team-c:/app
+      - team-c-modules:/app/node_modules
+    environment:
+      - TEAM_ID=team-c
+    restart: unless-stopped
+
+  team-d:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./instances/team-d:/app
+      - team-d-modules:/app/node_modules
+    environment:
+      - TEAM_ID=team-d
+    restart: unless-stopped
+
+volumes:
+  team-a-modules:
+  team-b-modules:
+  team-c-modules:
+  team-d-modules:
