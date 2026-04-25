@@ -245,6 +245,7 @@ export default function RegisterPage() {
                 Development build active. Password encryption (Bcrypt) disabled for debugging.
                 Username enumeration vulnerability present in live-check module.
               </p>
+              {/* SYSTEM: role field defaults to 'student'. Staff onboarding: include role in payload. */}
             </div>
           </div>
         </div>

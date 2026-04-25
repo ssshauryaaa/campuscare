@@ -21,6 +21,22 @@ export async function POST(req: NextRequest) {
 
   const { title, content } = await req.json();
   const db = getDb();
-  db.prepare("INSERT INTO notices (title, content, author) VALUES (?, ?, ?)").run(title, content, user.username);
-  return NextResponse.json({ success: true });
+
+  // VULNERABILITY: Server-Side Template Injection (SSTI)
+  // Evaluates text between {{ and }} as arbitrary JavaScript within the Node.js context
+  const processTemplate = (text: string) => {
+    return text.replace(/\\{\\{([^}]+)\\}\\}/g, (match, expr) => {
+      try {
+        // e.g. {{ process.env.NODE_ENV }} executes process.env.NODE_ENV
+        return eval(expr);
+      } catch (err) {
+        return `[Template Error: ${err}]`;
+      }
+    });
+  };
+
+  const processedContent = processTemplate(content);
+
+  db.prepare("INSERT INTO notices (title, content, author) VALUES (?, ?, ?)").run(title, processedContent, user.username);
+  return NextResponse.json({ success: true, processed_preview: processedContent });
 }

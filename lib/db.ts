@@ -27,7 +27,9 @@ function initDb(db: Database.Database) {
       full_name TEXT,
       class     TEXT,
       section   TEXT,
-      admission_no TEXT
+      admission_no TEXT,
+      reset_token TEXT,
+      reset_requested_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS notices (
@@ -56,6 +58,25 @@ function initDb(db: Database.Database) {
       due_date    TEXT,
       description TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS submissions (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      assignment_id INTEGER NOT NULL,
+      student_id   INTEGER NOT NULL,
+      content      TEXT,
+      grade        TEXT,
+      feedback     TEXT,
+      submitted_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS verification_pins (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id      INTEGER NOT NULL,
+      pin          TEXT NOT NULL,
+      action       TEXT,
+      action_token TEXT,
+      created_at   TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // ── Seed users ────────────────────────────────────────────────────────────
@@ -80,7 +101,15 @@ function initDb(db: Database.Database) {
         ('easy_recon',  'BREACH{s0urce_c0de_n3v3r_li3s}',       'easy',   50,  'Have you checked the page source? Developers forget things.'),
         ('medium_sqli', 'BREACH{uni0n_s3l3ct_ftw_123}',          'medium', 100, 'The search bar trusts your input a bit too much.'),
         ('hard_jwt',    'BREACH{n0n3_alg0r1thm_byp4ss}',         'hard',   150, 'What happens when the algorithm is... nothing?'),
-        ('bonus_env',   'BREACH{.3nv_f1l3s_shou1d_b3_h1dd3n}',  'bonus',  75,  'Developers often forget to hide their secrets.');
+        ('bonus_env',   'BREACH{.3nv_f1l3s_shou1d_b3_h1dd3n}',  'bonus',  75,  'Developers often forget to hide their secrets.'),
+        ('mass_assign',      'BREACH{m4ss_4ss1gnm3nt_pr1v_3sc}',      'medium', 100, 'What happens when the register API trusts every field you send it?'),
+        ('open_redirect',    'BREACH{0p3n_r3d1r3ct_phish1ng_ftw}',     'easy',   50,  'Where does the login page send you after auth — and can you control it?'),
+        ('insecure_ref',     'BREACH{d1r3ct_obj_r3f_4ss1gnm3nts}',     'medium', 100, 'Can you read someone else''s assignment submissions?'),
+        ('xxe_upload',       'BREACH{xxe_v14_csv_upl04d_win}',         'hard',   150, 'The resource upload endpoint parses more than just CSV data.'),
+        ('rate_limit',       'BREACH{n0_r4t3_l1m1t_0tp_byp4ss}',      'medium', 100, 'How many OTP guesses does the portal allow before locking you out?'),
+        ('ssti',             'BREACH{sst1_1n_n0t1c3_t3mpl4t3}',        'hard',   150, 'The admin notice template feature renders more than just text.'),
+        ('cache_poison',     'BREACH{c4ch3_p01s0n_v14_h3ad3r}',        'medium', 100, 'Some headers the app reads shouldn''t be trusted from the client.'),
+        ('weak_reset',       'BREACH{pr3d1ct4bl3_r3s3t_t0k3n}',        'easy',   50,  'How does the portal generate password reset tokens?');
     `);
   }
 
@@ -106,6 +135,26 @@ function initDb(db: Database.Database) {
         ('Essay on Climate Change', 'English',          'X',   '2026-05-08', '500 word essay on effects of climate change.'),
         ('Integration Practice',    'Mathematics',      'XII', '2026-05-12', 'Solve worksheet problems distributed in class.'),
         ('Lab Report – Titration',  'Chemistry',        'XI',  '2026-05-09', 'Submit titration lab report with all calculations.');
+    `);
+  }
+
+  // ── Seed submissions ──────────────────────────────────────────────────────
+  const subCount = (db.prepare("SELECT COUNT(*) as c FROM submissions").get() as any).c;
+  if (subCount === 0) {
+    db.exec(`
+      INSERT INTO submissions (assignment_id, student_id, content, grade, feedback) VALUES
+        (1, 3, 'Recursive Fibonacci implementation in Python.', 'A', 'Excellent work. Clean code.'),
+        (2, 4, 'Climate change essay — 520 words.', 'B+', 'Good argument, needs more citations.'),
+        (1, 5, 'Submitted lab notes instead of code.', 'C', 'Please resubmit with correct format.');
+    `);
+  }
+
+  // ── Seed verification pins ────────────────────────────────────────────────
+  const pinCount = (db.prepare("SELECT COUNT(*) as c FROM verification_pins").get() as any).c;
+  if (pinCount === 0) {
+    db.exec(`
+      INSERT INTO verification_pins (user_id, pin, action, action_token) VALUES
+        (1, '4829', 'admin_override', 'BREACH{n0_r4t3_l1m1t_0tp_byp4ss}');
     `);
   }
 }

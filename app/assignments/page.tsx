@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { BookOpen } from "lucide-react";
+import Link from "next/link";
 
 interface Assignment {
   id: number;
@@ -43,6 +44,7 @@ export default function AssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
+  const [userId, setUserId] = useState<number | null>(null);
 
   const CLASSES = ["All", "X", "XI", "XII"];
 
@@ -52,6 +54,10 @@ export default function AssignmentsPage() {
       router.push("/login");
       return;
     }
+    try {
+      const payload = JSON.parse(atob(match[1].split(".")[1]));
+      setUserId(payload.id);
+    } catch {}
     fetch("/api/assignments")
       .then((r) => r.json())
       .then((d) => {
@@ -83,6 +89,14 @@ export default function AssignmentsPage() {
               <div style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 14px", borderRadius:20, background:"rgba(220,38,38,0.08)", border:"1px solid rgba(220,38,38,0.2)", color:"#dc2626", fontSize:12, fontWeight:700 }}>
                 ⚠️ {overdueCount} Overdue
               </div>
+            )}
+            {userId && (
+              <>
+                <Link href={`/api/assignments/submissions?studentId=${userId}`} style={{ fontSize:12, fontWeight:800, color:"var(--cc-orange)", textDecoration:"none", padding:"6px 14px", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:8 }}>
+                  View My Submissions ↗
+                </Link>
+                {/* Note: change studentId in URL to view other students' records */}
+              </>
             )}
           </div>
 

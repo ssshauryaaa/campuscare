@@ -18,11 +18,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
     if (match) router.push("/dashboard");
+
+    // VULNERABILITY: next param read from URL with no origin validation
+    // Attack URL: /login?next=https://evil.com/fakecampuscare
+    const params = new URLSearchParams(window.location.search);
+    const nextUrl = params.get("next");
+    if (nextUrl) setRedirectTarget(nextUrl);
   }, [router]);
 
   const handleSubmit = async () => {
@@ -42,7 +49,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push("/dashboard");
+        const nextUrl = new URLSearchParams(window.location.search).get("next");
+        // VULNERABILITY: redirects to any URL — no check that it starts with '/'
+        router.push(nextUrl || "/dashboard");
       } else {
         // VULNERABILITY: Verbose error reporting leaks SQL query
         const errorMessage = data.error + (data.query ? `\n\n[Query Leaked]:\n${data.query}` : "");
@@ -148,6 +157,12 @@ export default function LoginPage() {
               <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}>
                 <span style={{ fontWeight:800 }}>Error:</span> {error}
               </p>
+            </div>
+          )}
+
+          {redirectTarget && (
+            <div style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", marginBottom:18 }}>
+              ↩ You will be redirected to: <span style={{ color:"#06b6d4" }}>{redirectTarget}</span> after login.
             </div>
           )}
 

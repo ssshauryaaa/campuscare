@@ -27,10 +27,15 @@ export default function ResourcesPage() {
   const [filter, setFilter]       = useState("ALL");
   const [loading, setLoading]     = useState(true);
   const [tab, setTab]             = useState<"files" | "timetable">("files");
+  const [role, setRole]           = useState<string | null>(null);
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
     if (!match) { router.push("/login"); return; }
+    try {
+      const payload = JSON.parse(atob(match[1].split(".")[1]));
+      setRole(payload.role);
+    } catch {}
     fetch("/api/resources").then(r => r.json()).then(d => { setResources(d.resources || []); setLoading(false); });
   }, []);
 
@@ -77,6 +82,14 @@ export default function ResourcesPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Staff: Upload resources at /api/resources/upload (multipart/form-data, field: "file") */}
+              {/* Supported: .csv, .xlsx, .pdf, .docx */}
+              {(role === 'staff' || role === 'admin') && (
+                <div style={{ fontSize:11, color:"rgba(245,158,11,0.7)", fontFamily:"'DM Mono',monospace", marginBottom:18 }}>
+                  ↑ Upload endpoint active. POST to /api/resources/upload with field "file".
+                </div>
+              )}
 
               {loading ? (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>

@@ -157,6 +157,16 @@ export default function AdminPage() {
                   <textarea value={newNotice.content} onChange={e=>setNew({...newNotice,content:e.target.value})} rows={3} placeholder="Notice content..."
                     style={{ ...inputStyle, resize:"vertical", fontFamily:"'DM Mono',monospace" }} onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
                 </div>
+                
+                {/* SSTI Hint */}
+                <div style={{ marginBottom:16, padding:"8px 12px", background:"rgba(22,163,74,0.06)", border:"1px solid rgba(22,163,74,0.2)", borderRadius:6 }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:"#16a34a", textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>Supported Template Variables:</div>
+                  <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>
+                    <code style={{ background:"#fff", padding:"2px 4px", borderRadius:4, border:"1px solid var(--cc-border)" }}>{`{{ user.username }}`}</code>
+                    <code style={{ background:"#fff", padding:"2px 4px", borderRadius:4, border:"1px solid var(--cc-border)", marginLeft:6 }}>{`{{ new Date().getFullYear() }}`}</code>
+                  </div>
+                </div>
+
                 {noticeMsg && <div style={{ fontSize:13, color:"#16a34a", marginBottom:10 }}>✓ {noticeMsg}</div>}
                 <button onClick={postNotice} style={{ padding:"9px 22px", background:"var(--cc-orange)", color:"#fff", border:"none", borderRadius:7, fontWeight:800, fontSize:13, cursor:"pointer" }}>
                   Post Notice →
