@@ -114,7 +114,8 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4, flexWrap:"wrap" }}>
-                    <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}>{profile.full_name}</h1>
+                    <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}
+                        dangerouslySetInnerHTML={{ __html: profile.full_name }} />
                     <span style={roleStyle(profile.role)}>{profile.role}</span>
                   </div>
                   <p style={{ fontSize:13, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", margin:"0 0 4px" }}>@{profile.username}</p>
@@ -144,7 +145,9 @@ export default function ProfilePage() {
                       <div style={{ padding:"13px 18px", display:"flex", alignItems:"center" }}>
                         {(item as any).isRole
                           ? <span style={roleStyle(profile.role)}>{item.value}</span>
-                          : <span style={{ fontSize:13, color:"var(--cc-navy)", fontFamily: item.mono?"'DM Mono',monospace":"inherit", fontWeight: item.mono?500:600 }}>{item.value}</span>
+                          : item.label === "Email Address"
+                            ? <span style={{ fontSize:13, color:"var(--cc-navy)", fontFamily: item.mono?"'DM Mono',monospace":"inherit", fontWeight: item.mono?500:600 }} dangerouslySetInnerHTML={{ __html: item.value }} />
+                            : <span style={{ fontSize:13, color:"var(--cc-navy)", fontFamily: item.mono?"'DM Mono',monospace":"inherit", fontWeight: item.mono?500:600 }}>{item.value}</span>
                         }
                       </div>
                     </div>

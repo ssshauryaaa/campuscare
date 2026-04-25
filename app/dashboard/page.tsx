@@ -196,7 +196,12 @@ export default function Dashboard() {
                       <div style={{ marginBottom:6 }}>
                         <span style={{ fontSize:10, fontWeight:800, background:"rgba(245,130,10,0.12)", color:"var(--cc-orange)", border:"1px solid rgba(245,130,10,0.25)", borderRadius:20, padding:"2px 8px", textTransform:"uppercase" }}>{n.author}</span>
                       </div>
-                      <div style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)", marginBottom:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}>{n.title}</div>
+                      {/* VULNERABILITY: notice titles on dashboard rendered as raw HTML */}
+                      <h4
+                        className="font-semibold text-[#1a3c6e] text-sm"
+                        style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)", marginBottom:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}
+                        dangerouslySetInnerHTML={{ __html: n.title }}
+                      />
                       <div style={{ fontSize:11, color:"var(--cc-text-muted)" }}>{new Date(n.created_at).toLocaleDateString("en-IN")}</div>
                     </div>
                   ))}

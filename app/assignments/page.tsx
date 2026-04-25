@@ -92,7 +92,7 @@ export default function AssignmentsPage() {
             )}
             {userId && (
               <>
-                <Link href={`/api/assignments/submissions?studentId=${userId}`} style={{ fontSize:12, fontWeight:800, color:"var(--cc-orange)", textDecoration:"none", padding:"6px 14px", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:8 }}>
+                <Link href={`/assignments/submissions?studentId=${userId}`} style={{ fontSize:12, fontWeight:800, color:"var(--cc-orange)", textDecoration:"none", padding:"6px 14px", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:8 }}>
                   View My Submissions ↗
                 </Link>
                 {/* Note: change studentId in URL to view other students' records */}

@@ -40,6 +40,19 @@ export default function NoticesPage() {
         setRawApiDump(d);
         setLoading(false);
       });
+
+    // VULNERABILITY: reads window.location.hash and writes it into the DOM unsafely
+    // Attack: /notices#<img src=x onerror=alert(document.cookie)>
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      setTimeout(() => {
+        const filterEl = document.getElementById("filter-display");
+        if (filterEl) {
+          // VULNERABILITY: innerHTML set from URL hash — DOM-based XSS
+          filterEl.innerHTML = `Filtered by: ${decodeURIComponent(hash)}`;
+        }
+      }, 100);
+    }
   }, []);
 
   // VULNERABILITY: highlight function injects filter string raw into innerHTML
@@ -142,6 +155,8 @@ export default function NoticesPage() {
               />
             </div>
           )}
+
+          <div id="filter-display" className="text-sm text-gray-500 mb-4" />
 
           {/* Notice Feed */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>

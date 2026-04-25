@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!user) {
-    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid username or password", debug_query: query }, { status: 401 });
   }
 
   const token = signToken({

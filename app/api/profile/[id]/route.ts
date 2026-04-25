@@ -22,12 +22,17 @@ export async function GET(
 
   const db = getDb();
 
-  // VULNERABILITY: No authorization check — user.id !== id never verified
-  const profile = db
-    .prepare(
-      "SELECT id, username, email, full_name, class, section, admission_no, role FROM users WHERE id = ?"
-    )
-    .get(Number(id));
+  let profile: any;
+  try {
+    // VULNERABILITY: id from URL path injected directly into query
+    profile = db
+      .prepare(
+        `SELECT id, username, email, full_name, class, section, admission_no, role FROM users WHERE id = ${id}`
+      )
+      .get();
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 
   if (!profile) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });

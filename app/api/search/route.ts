@@ -10,21 +10,22 @@ export async function GET(req: NextRequest) {
   const user = getSessionUserFromRequest(req);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const q = req.nextUrl.searchParams.get("q");
-  if (!q) return NextResponse.json({ error: "Query parameter q is required" }, { status: 400 });
+  const query = req.nextUrl.searchParams.get("q") ?? "";
+  const classFilter = req.nextUrl.searchParams.get("class") ?? "";
 
   const db = getDb();
 
-  // VULNERABILITY: Direct interpolation — UNION SELECT possible
-  const query = `SELECT id, full_name, class, section, admission_no FROM users WHERE full_name LIKE '%${q}%' AND role = 'student'`;
+  let sql = `SELECT id, full_name, class, section, admission_no FROM users WHERE (full_name LIKE '%${query}%' OR username LIKE '%${query}%')`;
 
-  let results: any[];
-  try {
-    results = db.prepare(query).all();
-  } catch (e: any) {
-    // VULNERABILITY: Raw error + full query exposed
-    return NextResponse.json({ error: e.message, query }, { status: 500 });
+  // VULNERABILITY: class filter also injected raw
+  if (classFilter) {
+    sql += ` AND class = '${classFilter}'`;
   }
 
-  return NextResponse.json({ results, count: results.length });
+  try {
+    const results = db.prepare(sql).all();
+    return NextResponse.json({ results, query, class_filter: classFilter });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message, query }, { status: 500 });
+  }
 }

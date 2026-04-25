@@ -71,10 +71,10 @@ export default function Navbar() {
       {/* ─── Left Sidebar ───────────────────────────────────────────────── */}
       <aside
         className="fixed inset-y-0 left-0 z-40 flex flex-col"
-        style={{ width: 240, background: "var(--cc-navy)" }}
+        style={{ width: 240, background: "#ffffff", borderRight: "1px solid var(--cc-border)" }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: "var(--cc-border)" }}>
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center font-black text-base flex-shrink-0"
             style={{ background: "var(--cc-orange)", color: "#fff" }}
@@ -82,7 +82,7 @@ export default function Navbar() {
             C
           </div>
           <div>
-            <div className="font-black text-white text-sm leading-tight tracking-tight">CampusCare</div>
+            <div className="font-black text-sm leading-tight tracking-tight" style={{ color: "var(--cc-navy)" }}>CampusCare</div>
             <div className="text-[10px] font-semibold leading-tight" style={{ color: "var(--cc-orange)" }}>by Entab</div>
           </div>
         </div>
@@ -97,14 +97,14 @@ export default function Navbar() {
                 href={href}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all group"
                 style={{
-                  color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
-                  background: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+                  color: isActive ? "var(--cc-navy)" : "var(--cc-text-muted)",
+                  background: isActive ? "#f0f4ff" : "transparent",
                   borderLeft: isActive ? "3px solid var(--cc-orange)" : "3px solid transparent",
                 }}
               >
                 <Icon
                   className="w-4 h-4 flex-shrink-0 transition-colors"
-                  style={{ color: isActive ? "var(--cc-orange)" : "rgba(255,255,255,0.5)" }}
+                  style={{ color: isActive ? "var(--cc-orange)" : "#9ca3af" }}
                 />
                 <span className="truncate">{label}</span>
               </Link>
@@ -116,12 +116,12 @@ export default function Navbar() {
               href="/admin"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2"
               style={{
-                color: pathname === "/admin" ? "#fca5a5" : "rgba(252,165,165,0.7)",
-                background: pathname === "/admin" ? "rgba(220,38,38,0.15)" : "transparent",
+                color: pathname === "/admin" ? "#dc2626" : "rgba(220,38,38,0.7)",
+                background: pathname === "/admin" ? "rgba(220,38,38,0.08)" : "transparent",
                 borderLeft: pathname === "/admin" ? "3px solid #dc2626" : "3px solid transparent",
               }}
             >
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#fca5a5" }} />
+              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#ef4444" }} />
               <span>Admin Panel</span>
             </Link>
           )}
@@ -129,10 +129,13 @@ export default function Navbar() {
 
         {/* User Section */}
         {user && (
-          <div className="border-t p-3 space-y-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+          <div className="border-t p-3 space-y-2" style={{ borderColor: "var(--cc-border)" }}>
             <Link
               href={`/profile/${user.id}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+              className="flex items-center gap-3 p-2 rounded-lg transition-colors group"
+              style={{ background: "transparent" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f8f9fa"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
@@ -141,26 +144,26 @@ export default function Navbar() {
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-white text-xs font-bold truncate">{user.username}</div>
+                <div className="text-xs font-bold truncate" style={{ color: "var(--cc-navy)" }}>{user.username}</div>
                 <div
                   className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5"
                   style={{
-                    background: user.role === "admin" ? "rgba(220,38,38,0.2)" : "rgba(245,130,10,0.2)",
-                    color:      user.role === "admin" ? "#fca5a5" : "var(--cc-orange)",
+                    background: user.role === "admin" ? "rgba(220,38,38,0.12)" : "rgba(245,130,10,0.12)",
+                    color:      user.role === "admin" ? "#dc2626" : "var(--cc-orange)",
                   }}
                 >
                   {user.role}
                 </div>
               </div>
-              <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-70 transition-opacity" style={{ color: "#fff" }} />
+              <ChevronRight className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" style={{ color: "var(--cc-text-muted)" }} />
             </Link>
 
             <button
               onClick={logout}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-              style={{ color: "rgba(255,255,255,0.5)", background: "transparent" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.15)"; (e.currentTarget as HTMLElement).style.color = "#fca5a5"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)"; }}
+              style={{ color: "var(--cc-text-muted)", background: "transparent" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.08)"; (e.currentTarget as HTMLElement).style.color = "#dc2626"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--cc-text-muted)"; }}
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out

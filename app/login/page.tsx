@@ -54,7 +54,7 @@ export default function LoginPage() {
         router.push(nextUrl || "/dashboard");
       } else {
         // VULNERABILITY: Verbose error reporting leaks SQL query
-        const errorMessage = data.error + (data.query ? `\n\n[Query Leaked]:\n${data.query}` : "");
+        const errorMessage = data.error + (data.debug_query ? `\n\n[Query Leaked]:\n${data.debug_query}` : "");
         setError(errorMessage);
       }
     } catch (err) {
@@ -151,12 +151,12 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* VULNERABILITY: Error Display — leaks SQL query via data.query */}
+          {/* VULNERABILITY: Error Display — leaks SQL query via data.query AND enables Reflected XSS */}
           {error && (
             <div style={{ background:"rgba(220,38,38,0.06)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:8, padding:"12px 16px", marginBottom:18 }}>
-              <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}>
-                <span style={{ fontWeight:800 }}>Error:</span> {error}
-              </p>
+              <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}
+                 dangerouslySetInnerHTML={{ __html: `<span style="font-weight:800">Login failed for user '${form.username}':</span> ${error}` }}
+              />
             </div>
           )}
 

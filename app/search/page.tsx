@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // VULNERABILITY: q param → /api/search → interpolated into SQL
 // UNION attack: %' UNION SELECT flag_value,flag_name,difficulty,points,hint FROM flags--
@@ -18,17 +19,29 @@ interface Student {
 const CLASS_FILTERS = ["All", "IX", "X", "XI", "XII"];
 
 export default function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [classFilter, setClass] = useState("All");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [classFilter, setClass] = useState(searchParams.get("class") ?? "All");
   const [results, setResults] = useState<Student[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState("");
+  const [searched, setSearched] = useState(searchParams.get("q") ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = async (overrideQ?: string) => {
+  useEffect(() => {
+    // Auto-search if q or class is present in URL
+    const q = searchParams.get("q");
+    const cls = searchParams.get("class");
+    if (q !== null || cls !== null) {
+      handleSearch(q ?? "", cls ?? "All");
+    }
+  }, [searchParams]);
+
+  const handleSearch = async (overrideQ?: string, overrideClass?: string) => {
     const q = overrideQ ?? query;
-    if (!q.trim() && classFilter === "All") return;
+    const c = overrideClass ?? classFilter;
+    if (!q.trim() && c === "All") return;
 
     setLoading(true);
     setError("");
@@ -36,16 +49,15 @@ export default function SearchPage() {
     setSearched(q);
 
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q || " ")}`);
+      const url = `/api/search?q=${encodeURIComponent(q)}&class=${encodeURIComponent(c === "All" ? "" : c)}`;
+      const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok) {
         // VULNERABILITY: Raw SQL error + executed query leaked for CTF
         setError((data.error || "Unknown error") + (data.query ? `\n\n[QUERY_LOG]: ${data.query}` : ""));
       } else {
-        let list: Student[] = data.results || [];
-        if (classFilter !== "All") list = list.filter(s => s.class === classFilter);
-        setResults(list);
+        setResults(data.results || []);
       }
     } catch (err) {
       setError("Critical System Failure: Connection refused.");
@@ -56,9 +68,11 @@ export default function SearchPage() {
 
   const handleClear = () => {
     setQuery("");
+    setClass("All");
     setResults(null);
     setError("");
     setSearched("");
+    router.push("/search");
     inputRef.current?.focus();
   };
 
@@ -108,7 +122,13 @@ export default function SearchPage() {
               <span style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5 }}>Filter by Class:</span>
               <div style={{ display:"flex", gap:6 }}>
                 {CLASS_FILTERS.map(c => (
-                  <button key={c} onClick={() => setClass(c)}
+                  <button key={c} onClick={() => {
+                      setClass(c);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("class", c === "All" ? "" : c);
+                      if (query) url.searchParams.set("q", query);
+                      router.push(url.pathname + url.search);
+                    }}
                     style={{ padding:"4px 12px", borderRadius:20, fontSize:11, fontWeight:700, border:"1.5px solid", cursor:"pointer", transition:"all 0.15s",
                       background: classFilter===c ? "var(--cc-orange)" : "transparent",
                       borderColor: classFilter===c ? "var(--cc-orange)" : "var(--cc-border)",
@@ -142,9 +162,9 @@ export default function SearchPage() {
               </div>
             ) : results !== null && results.length > 0 ? (
               <>
-                <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}>
-                  Found <span style={{ color:"var(--cc-orange)", fontWeight:800 }}>{results.length}</span> records for &ldquo;{searched}&rdquo;
-                </div>
+                {/* VULNERABILITY: Raw URL param rendered as HTML — reflected XSS */}
+                <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}
+                     dangerouslySetInnerHTML={{ __html: `Found <span style="color:var(--cc-orange);font-weight:800">${results.length}</span> records for &ldquo;${searched}&rdquo;` }} />
                 <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
@@ -153,23 +173,17 @@ export default function SearchPage() {
                           <th key={h} style={{ padding:"10px 16px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
                         ))}
                       </tr>
-                    </thead>
                     <tbody>
-                      {results.map((s, i) => (
-                        <tr key={s.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}
+                      {/* VULNERABILITY: Render every key dynamically so UNION injected columns show up */}
+                      {results.map((s: any, i: number) => (
+                        <tr key={s.id || i} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}
                           onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="#f0f4ff"}
                           onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=i%2===0?"#fff":"#f8f9fa"}>
-                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>{s.id}</td>
-                          <td style={{ padding:"11px 16px" }}>
-                            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                              <InitialAvatar name={s.full_name} />
-                              <span style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)" }}>{s.full_name}</span>
-                            </div>
-                          </td>
-                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>
-                            <span style={{ background:"rgba(26,60,110,0.08)", color:"var(--cc-navy)", padding:"2px 8px", borderRadius:4, fontSize:11, fontWeight:700 }}>{s.class}-{s.section}</span>
-                          </td>
-                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>{s.admission_no}</td>
+                          {Object.values(s).map((val: any, j: number) => (
+                            <td key={j} style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>
+                              {String(val ?? "")}
+                            </td>
+                          ))}
                           <td style={{ padding:"11px 16px", textAlign:"center" }}>
                             <Link href={`/profile/${s.id}`} style={{ fontSize:16, color:"var(--cc-orange)", textDecoration:"none", fontWeight:800 }}>→</Link>
                           </td>
