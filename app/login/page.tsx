@@ -10,6 +10,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { logRealAttack } from "@/lib/logAttack";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +22,7 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     setMounted(true);
@@ -40,6 +44,16 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    if (/('|--|OR\s+1=1)/i.test(form.username)) {
+      if (!patchedVulns.has("sqli_login")) {
+        logRealAttack({ type: "sqli_login", detail: `SQLi auth bypass attempt`, endpoint: "/api/auth/login", method: "POST", payload: `username=${form.username}` });
+      }
+    } else if (form.username.includes("<script") || form.username.includes("onerror")) {
+      if (!patchedVulns.has("xss_login")) {
+        logRealAttack({ type: "xss_login", severity: "medium", detail: `Reflected XSS via login error message`, endpoint: "/login", method: "POST", payload: `username=${form.username}` });
+      }
+    }
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -50,8 +64,18 @@ export default function LoginPage() {
 
       if (res.ok) {
         const nextUrl = new URLSearchParams(window.location.search).get("next");
-        // VULNERABILITY: redirects to any URL — no check that it starts with '/'
-        router.push(nextUrl || "/dashboard");
+        if (nextUrl && (nextUrl.startsWith("http://") || nextUrl.startsWith("https://"))) {
+          if (!patchedVulns.has("open_redirect")) {
+            logRealAttack({ type: "open_redirect", severity: "medium", detail: `Open redirect via ?next=`, endpoint: "/login", payload: `?next=${nextUrl}` });
+            // VULNERABILITY: redirects to any URL — no check that it starts with '/'
+            router.push(nextUrl || "/dashboard");
+          } else {
+            // Patched — ignore external redirect, stay on dashboard
+            router.push("/dashboard");
+          }
+        } else {
+          router.push(nextUrl || "/dashboard");
+        }
       } else {
         // VULNERABILITY: Verbose error reporting leaks SQL query
         const errorMessage = data.error + (data.debug_query ? `\n\n[Query Leaked]:\n${data.debug_query}` : "");
@@ -151,18 +175,33 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Patch banners for blue team */}
+          {patchedVulns.has("sqli_login") && <PatchedBanner label="SQLI — LOGIN" />}
+          {patchedVulns.has("open_redirect") && redirectTarget && <PatchedBanner label="OPEN REDIRECT" />}
+
           {/* VULNERABILITY: Error Display — leaks SQL query via data.query AND enables Reflected XSS */}
           {error && (
             <div style={{ background:"rgba(220,38,38,0.06)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:8, padding:"12px 16px", marginBottom:18 }}>
-              <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}
-                 dangerouslySetInnerHTML={{ __html: `<span style="font-weight:800">Login failed for user '${form.username}':</span> ${error}` }}
-              />
+              {patchedVulns.has("xss_login") ? (
+                /* Patched — safe text rendering */
+                <>
+                  <PatchedBanner label="XSS — LOGIN ERROR" />
+                  <p style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0, fontFamily:"monospace", whiteSpace:"pre-wrap", wordBreak:"break-all" }}>
+                    Login failed for user &apos;{form.username}&apos;: {error}
+                  </p>
+                </>
+              ) : (
+                /* VULNERABILITY: Reflected XSS via dangerouslySetInnerHTML */
+                <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}
+                   dangerouslySetInnerHTML={{ __html: `<span style="font-weight:800">Login failed for user '${form.username}':</span> ${error}` }}
+                />
+              )}
             </div>
           )}
 
-          {redirectTarget && (
+          {redirectTarget && !patchedVulns.has("open_redirect") && (
             <div style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", marginBottom:18 }}>
-              ↩ You will be redirected to: <span style={{ color:"#06b6d4" }}>{redirectTarget}</span> after login.
+              ↔ You will be redirected to: <span style={{ color:"#06b6d4" }}>{redirectTarget}</span> after login.
             </div>
           )}
 

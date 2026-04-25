@@ -128,4 +128,25 @@ Attempt to log in with a username containing HTML:
 **Result:** The login fails, and the UI attempts to display "Login failed for user '<img...>'", triggering the XSS payload.
 
 ---
-**Happy Hacking!** Remember to use Incognito mode if testing session-destroying payloads.
+
+## Blue Team Defense Dashboard
+
+In addition to the Red Team experience, CampusCare features a fully gamified **Blue Team Defense Console** that allows defenders to detect, acknowledge, and patch vulnerabilities in real-time.
+
+### Accessing the Dashboard
+Log in as an administrator (e.g., username `admin`, password `admin123`) and navigate to the **Defense Console** via the sidebar, or go directly to `/defense`.
+
+### Features
+- **Real-Time Log Feed:** Watch simulated attacks and your own red-team exploits appear in the log feed in real-time. Critical severity events trigger visual alarms.
+- **Threat Inspector:** Click on any event to inspect the raw payload, source IP, and HTTP metadata.
+- **Two-Step Remediation Flow:**
+  1. **Acknowledge Threat:** Triages the event and awards initial points (+40 pts).
+  2. **Fix Vulnerability Code:** Opens the **IDE Modal**.
+- **Integrated IDE Modal:** When fixing a vulnerability, a code editor overlays the screen. 
+  - It provides a description of the flaw.
+  - Features a **Multi-File Tab Layout** so players must explore both frontend (e.g., `page.tsx`) and backend (e.g., `route.ts`) code to locate the vulnerability.
+  - Players can edit the code, use the hint system if stuck, and deploy the fix.
+- **Instant Patch Enforcement:** Once a vulnerability is marked as patched in the IDE, the fix is instantly enforced across the entire application via a high-speed local polling mechanism. The vulnerable routes will automatically block the exploit payload and display a green `🛡️ PATCHED` banner to any attackers attempting to exploit that specific vector.
+
+---
+**Happy Hacking (and Defending)!** Remember to use Incognito mode if testing session-destroying payloads.

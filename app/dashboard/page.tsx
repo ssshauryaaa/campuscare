@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Flag, Trophy, Search, Bell, BookOpen, Library, KeyRound, User } from "lucide-react";
+import { logRealAttack } from "@/lib/logAttack";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 interface User { id: number; username: string; role: string; email: string; full_name: string; }
 interface Notice { id: number; title: string; author: string; created_at: string; }
@@ -25,6 +28,7 @@ export default function Dashboard() {
   const [subs, setSubs] = useState<Sub[]>([]);
   const [rank, setRank] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     setMounted(true);
@@ -35,11 +39,17 @@ export default function Dashboard() {
       const u = JSON.parse(atob(match[1].split(".")[1]));
       setUser(u);
       
-      // Parallel data fetching
       Promise.all([
         fetch("/api/notices").then(r => r.json())
       ]).then(([noticeData]) => {
-        setNotices(noticeData.notices || []);
+        const fetchedNotices = noticeData.notices || [];
+        setNotices(fetchedNotices);
+        
+        fetchedNotices.forEach((n: any) => {
+          if (/<script|onerror|javascript:/i.test(n.title)) {
+            logRealAttack({ type: "xss_dashboard", severity: "critical", detail: "XSS payload detected in dashboard notice title", endpoint: "/dashboard", payload: n.title });
+          }
+        });
       });
     } catch {
       router.push("/login");
@@ -188,6 +198,9 @@ export default function Dashboard() {
                   <div style={{ fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>Campus Bulletins</div>
                   <Link href="/notices" style={{ fontSize:11, fontWeight:700, color:"var(--cc-orange)", textDecoration:"none" }}>View All →</Link>
                 </div>
+                {patchedVulns.has("xss_dashboard") && (
+                  <div style={{ padding:"8px 18px" }}><PatchedBanner label="XSS — DASHBOARD" /></div>
+                )}
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:0 }}>
                   {notices.slice(0, 4).map((n, i) => (
                     <div key={n.id} style={{ padding:"16px 18px", borderBottom: i<2?"1px solid var(--cc-border)":"none", borderRight: i%2===0?"1px solid var(--cc-border)":"none", cursor:"pointer" }}
@@ -196,12 +209,19 @@ export default function Dashboard() {
                       <div style={{ marginBottom:6 }}>
                         <span style={{ fontSize:10, fontWeight:800, background:"rgba(245,130,10,0.12)", color:"var(--cc-orange)", border:"1px solid rgba(245,130,10,0.25)", borderRadius:20, padding:"2px 8px", textTransform:"uppercase" }}>{n.author}</span>
                       </div>
-                      {/* VULNERABILITY: notice titles on dashboard rendered as raw HTML */}
-                      <h4
-                        className="font-semibold text-[#1a3c6e] text-sm"
-                        style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)", marginBottom:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}
-                        dangerouslySetInnerHTML={{ __html: n.title }}
-                      />
+                      {patchedVulns.has("xss_dashboard") ? (
+                        /* PATCHED: safe text rendering */
+                        <h4 style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)", marginBottom:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}>
+                          {n.title}
+                        </h4>
+                      ) : (
+                        /* VULNERABILITY: notice titles on dashboard rendered as raw HTML */
+                        <h4
+                          className="font-semibold text-[#1a3c6e] text-sm"
+                          style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)", marginBottom:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" as any }}
+                          dangerouslySetInnerHTML={{ __html: n.title }}
+                        />
+                      )}
                       <div style={{ fontSize:11, color:"var(--cc-text-muted)" }}>{new Date(n.created_at).toLocaleDateString("en-IN")}</div>
                     </div>
                   ))}

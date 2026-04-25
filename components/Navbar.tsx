@@ -35,6 +35,24 @@ export default function Navbar() {
   const router   = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [hasCritical, setHasCritical] = useState(false);
+
+  useEffect(() => {
+    // Poll for unacknowledged critical attacks
+    const checkCritical = () => {
+      try {
+        const raw = localStorage.getItem("campus_attack_log");
+        if (raw) {
+          const events: any[] = JSON.parse(raw);
+          const hasUnacked = events.some(e => e.severity === "critical" && !e.detected && !e.patched);
+          setHasCritical(hasUnacked);
+        }
+      } catch { /* ignore */ }
+    };
+    checkCritical();
+    const interval = setInterval(checkCritical, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Sync user state with JWT in cookies
   useEffect(() => {
@@ -123,6 +141,24 @@ export default function Navbar() {
             >
               <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#ef4444" }} />
               <span>Admin Panel</span>
+            </Link>
+          )}
+
+          {(user?.role === "admin" || user?.role === "staff") && (
+            <Link
+              href="/defense"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2 relative group"
+              style={{
+                color: pathname === "/defense" ? "var(--cc-navy)" : "var(--cc-text-muted)",
+                background: pathname === "/defense" ? "#f0f4ff" : "transparent",
+                borderLeft: pathname === "/defense" ? "3px solid var(--cc-orange)" : "3px solid transparent",
+              }}
+            >
+              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: pathname === "/defense" ? "var(--cc-orange)" : "#9ca3af" }} />
+              <span className="truncate">Defense Console</span>
+              {hasCritical && (
+                <div style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", width:8, height:8, borderRadius:"50%", background:"#ef4444", boxShadow:"0 0 0 2px #fff", animation:"pulse 2s infinite" }} />
+              )}
             </Link>
           )}
         </nav>

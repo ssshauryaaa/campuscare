@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { logRealAttack } from "@/lib/logAttack";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 // VULNERABILITY: q param → /api/search → interpolated into SQL
 // UNION attack: %' UNION SELECT flag_value,flag_name,difficulty,points,hint FROM flags--
@@ -28,6 +31,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(searchParams.get("q") ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     // Auto-search if q or class is present in URL
@@ -49,9 +53,25 @@ export default function SearchPage() {
     setSearched(q);
 
     try {
-      const url = `/api/search?q=${encodeURIComponent(q)}&class=${encodeURIComponent(c === "All" ? "" : c)}`;
+      // Check if this attack type has been patched by the blue team
+      const sqliPatched = patchedVulns.has("sqli_search") || patchedVulns.has("sqli_class");
+      const xssPatched  = patchedVulns.has("xss_search");
+
+      // If SQLi is patched, sanitize the query before sending — just strip quotes
+      const safeQ = sqliPatched ? q.replace(/['";\-\-]/g, "") : q;
+      const safeC = sqliPatched ? (c === "All" ? "" : c.replace(/['";\-\-]/g, "")) : (c === "All" ? "" : c);
+
+      const url = `/api/search?q=${encodeURIComponent(safeQ)}&class=${encodeURIComponent(safeC)}`;
       const res = await fetch(url);
       const data = await res.json();
+
+      if (c !== "All" && (c.includes("'") || c.toLowerCase().includes("union"))) {
+        if (!sqliPatched) logRealAttack({ type: "sqli_class", detail: `SQLi attempt via class filter`, endpoint: "/search", payload: `?class=${c}` });
+      } else if (q.includes("'") || q.toLowerCase().includes("union") || (data.error && data.error.includes("SQL"))) {
+        if (!sqliPatched) logRealAttack({ type: "sqli_search", detail: `UNION/SQLi attempt on search`, endpoint: "/api/search", payload: q });
+      } else if (q.includes("<script") || q.includes("onerror")) {
+        if (!xssPatched) logRealAttack({ type: "xss_search", detail: `Reflected XSS attempt in search`, endpoint: "/search", payload: `?q=${q}` });
+      }
 
       if (!res.ok) {
         // VULNERABILITY: Raw SQL error + executed query leaked for CTF
@@ -162,9 +182,20 @@ export default function SearchPage() {
               </div>
             ) : results !== null && results.length > 0 ? (
               <>
-                {/* VULNERABILITY: Raw URL param rendered as HTML — reflected XSS */}
-                <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}
-                     dangerouslySetInnerHTML={{ __html: `Found <span style="color:var(--cc-orange);font-weight:800">${results.length}</span> records for &ldquo;${searched}&rdquo;` }} />
+                {/* Patched notice — shown instead of XSS sink when xss_search is patched */}
+                {patchedVulns.has("xss_search") ? (
+                  <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}>
+                    Found <span style={{ color:"var(--cc-orange)", fontWeight:800 }}>{results.length}</span> records for &ldquo;{searched}&rdquo;
+                    <PatchedBanner label="XSS — SEARCH REFLECT" />
+                  </div>
+                ) : (
+                  /* VULNERABILITY: Raw URL param rendered as HTML — reflected XSS */
+                  <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}
+                       dangerouslySetInnerHTML={{ __html: `Found <span style="color:var(--cc-orange);font-weight:800">${results.length}</span> records for &ldquo;${searched}&rdquo;` }} />
+                )}
+                {(patchedVulns.has("sqli_search") || patchedVulns.has("sqli_class")) && (
+                  <PatchedBanner label="SQLI — SEARCH / CLASS FILTER" />
+                )}
                 <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
@@ -173,6 +204,7 @@ export default function SearchPage() {
                           <th key={h} style={{ padding:"10px 16px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
                         ))}
                       </tr>
+                    </thead>
                     <tbody>
                       {/* VULNERABILITY: Render every key dynamically so UNION injected columns show up */}
                       {results.map((s: any, i: number) => (

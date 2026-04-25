@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Mail, Shield, School, Hash, Fingerprint, ChevronRight, AlertTriangle } from "lucide-react";
+import { logRealAttack } from "@/lib/logAttack";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 interface Profile {
   id: number; username: string; email: string; full_name: string;
@@ -18,6 +21,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [sessionUserId, setSession] = useState<number | null>(null);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
@@ -29,12 +33,20 @@ export default function ProfilePage() {
 
     if (!id) return;
     setLoading(true);
+
+    if (typeof id === "string" && !/^\d+$/.test(id)) {
+      logRealAttack({ type: "sqli_profile", severity: "critical", detail: "SQLi via profile URL parameter", endpoint: `/api/profile/${id}`, payload: id });
+    }
+
     fetch(`/api/profile/${id}`)
       .then(r => r.json())
       .then(d => {
         if (d.profile) {
           setProfile(d.profile);
           setError("");
+          if (/<script|onerror|javascript:/i.test(d.profile.full_name)) {
+            logRealAttack({ type: "xss_profile", severity: "high", detail: "Stored XSS via full_name", endpoint: `/profile/${id}`, payload: d.profile.full_name });
+          }
         } else {
           setError(d.error || "User not found");
           setProfile(null);
@@ -107,6 +119,10 @@ export default function ProfilePage() {
                 </div>
               )}
 
+              {/* Patch banners */}
+              {patchedVulns.has("xss_profile") && <PatchedBanner label="XSS — PROFILE NAME" />}
+              {patchedVulns.has("sqli_profile") && <PatchedBanner label="SQLI — PROFILE URL" />}
+
               {/* Header Card */}
               <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", padding:"28px 28px", display:"flex", alignItems:"center", gap:22 }}>
                 <div style={{ width:80, height:80, borderRadius:"50%", background: avatarColor(profile.role), display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:28, fontWeight:900, flexShrink:0, boxShadow:"0 4px 16px rgba(245,130,10,0.3)" }}>
@@ -114,8 +130,16 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4, flexWrap:"wrap" }}>
-                    <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}
-                        dangerouslySetInnerHTML={{ __html: profile.full_name }} />
+                    {patchedVulns.has("xss_profile") ? (
+                      /* PATCHED: safe text rendering for full_name */
+                      <>
+                        <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}>{profile.full_name}</h1>
+                      </>
+                    ) : (
+                      /* VULNERABILITY: Stored XSS via dangerouslySetInnerHTML on profile name */
+                      <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}
+                          dangerouslySetInnerHTML={{ __html: profile.full_name }} />
+                    )}
                     <span style={roleStyle(profile.role)}>{profile.role}</span>
                   </div>
                   <p style={{ fontSize:13, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", margin:"0 0 4px" }}>@{profile.username}</p>
