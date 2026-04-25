@@ -1,30 +1,30 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { Shield, Bell, Trophy, Flag, FileText, Library } from "lucide-react";
 
 // VULNERABILITY (Easy — 50pts): Flag hidden in HTML source comment below.
 // Right-click → View Page Source → Ctrl+F → BREACH
 
 const QUICK_LINKS = [
-  { href: "/login", icon: "🔑", label: "Student Login", desc: "Access your account" },
-  { href: "/notices", icon: "📋", label: "Notice Board", desc: "School announcements" },
-  { href: "/leaderboard", icon: "🏆", label: "Leaderboard", desc: "Breach@trix live scores" },
-  { href: "/submit", icon: "🚩", label: "Submit Flag", desc: "Claim your points" },
-  { href: "/assignments", icon: "📝", label: "Assignments", desc: "Pending class work" },
-  { href: "/resources", icon: "📚", label: "Resources", desc: "Study materials" },
+  { href: "/login",       icon: Shield,   label: "Student Login",    desc: "Access your portal account",  accent: "#1a3c6e" },
+  { href: "/notices",     icon: Bell,     label: "Notice Board",     desc: "School announcements",         accent: "#f5820a" },
+  { href: "/leaderboard", icon: Trophy,   label: "Leaderboard",      desc: "Breach@trix live scores",      accent: "#d97706" },
+  { href: "/submit",      icon: Flag,     label: "Submit Flag",      desc: "Claim your challenge points",  accent: "#16a34a" },
+  { href: "/assignments", icon: FileText, label: "Assignments",      desc: "Pending class work",           accent: "#7c3aed" },
+  { href: "/resources",   icon: Library,  label: "Resources",        desc: "Study materials & timetable", accent: "#0891b2" },
 ];
 
 const ANNOUNCEMENTS = [
-  { icon: "📅", text: "PTM scheduled — 15th April" },
-  { icon: "🏆", text: "Annual Sports Day — 20th April" },
-  { icon: "📋", text: "Exam timetable now available" },
-  { icon: "⚔️", text: "Breach@trix Finals — 8th May" },
+  { date: "15 Apr", text: "Parent-Teacher Meeting — Block A",  type: "PTM"     },
+  { date: "20 Apr", text: "Annual Sports Day — Main Ground",   type: "EVENT"   },
+  { date: "22 Apr", text: "Exam timetable now available",      type: "EXAM"    },
+  { date: "8 May",  text: "Breach@trix Finals — 8th May",      type: "CONTEST" },
 ];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-slate-200 selection:bg-cyan-500/30">
+    <div style={{ minHeight: "100vh", background: "var(--cc-bg)" }}>
       {/* =====================================================
           Developer Notes — TODO: REMOVE BEFORE GO-LIVE
           =====================================================
@@ -36,94 +36,144 @@ export default function Home() {
           JWT_SECRET is set to "secret" for now — change this!
           =====================================================
       */}
-      <Navbar />
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        
-        {/* Hero Section */}
-        <header className="mb-12">
-          <div className="text-cyan-400 text-xs font-bold tracking-[0.2em] uppercase mb-3">
+      {/* Top Bar */}
+      <header style={{ background:"#fff", borderBottom:"1px solid var(--cc-border)", position:"sticky", top:0, zIndex:50 }}>
+        <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 24px", height:60, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <Link href="/" style={{ display:"flex", alignItems:"center", gap:10, textDecoration:"none" }}>
+            <div style={{ width:34, height:34, borderRadius:"50%", background:"var(--cc-navy)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:14 }}>C</div>
+            <div>
+              <div style={{ fontWeight:900, color:"var(--cc-navy)", fontSize:15, lineHeight:1.1 }}>CampusCare</div>
+              <div style={{ fontSize:9, color:"var(--cc-orange)", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>by Entab</div>
+            </div>
+          </Link>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Link href="/notices" style={{ padding:"6px 16px", fontSize:13, fontWeight:600, color:"var(--cc-navy)", textDecoration:"none" }}>Notices</Link>
+            <Link href="/leaderboard" style={{ padding:"6px 16px", fontSize:13, fontWeight:600, color:"var(--cc-navy)", textDecoration:"none" }}>Leaderboard</Link>
+            <Link href="/login" style={{ padding:"8px 20px", borderRadius:8, fontSize:13, fontWeight:800, color:"#fff", background:"var(--cc-orange)", textDecoration:"none" }}>Student Login →</Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section style={{ background:"linear-gradient(135deg,#1a3c6e 0%,#2d5f8a 60%,#1a3c6e 100%)", padding:"72px 24px", textAlign:"center" }}>
+        <div style={{ maxWidth:700, margin:"0 auto" }}>
+          <div style={{ fontSize:11, fontWeight:700, color:"rgba(245,130,10,0.9)", letterSpacing:3, textTransform:"uppercase", marginBottom:14 }}>
+            Affiliated: CBSE · School No. 1234 · Est. 1998
+          </div>
+          <h1 style={{ fontSize:36, fontWeight:900, color:"#fff", margin:"0 0 12px", lineHeight:1.15 }}>
             Greenfield International School
-          </div>
-          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-4">
-            CampusCare <span className="text-slate-500 font-light">Student Portal</span>
           </h1>
-          <p className="text-slate-400 text-lg max-w-2xl leading-relaxed">
-            Manage your academic life — access notices, assignments, and resources in a secure, unified environment.
+          <p style={{ fontSize:16, color:"rgba(255,255,255,0.75)", margin:"0 0 36px", fontWeight:500 }}>
+            Empowering Excellence in Education — Academic Year 2025–26
           </p>
-        </header>
+          <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
+            <Link href="/login" style={{ padding:"12px 32px", borderRadius:8, fontWeight:800, fontSize:14, color:"#fff", background:"var(--cc-orange)", textDecoration:"none" }}>Student Login →</Link>
+            <Link href="/notices" style={{ padding:"12px 32px", borderRadius:8, fontWeight:700, fontSize:14, color:"#fff", border:"2px solid rgba(255,255,255,0.4)", textDecoration:"none" }}>View Notices</Link>
+          </div>
+        </div>
+      </section>
 
-        {/* Quick Access Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {QUICK_LINKS.map((card) => (
-            <Link key={card.href} href={card.href} className="group">
-              <div className="h-full p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300">
-                <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">{card.icon}</div>
-                <h3 className="text-white font-semibold mb-1">{card.label}</h3>
-                <p className="text-slate-400 text-sm">{card.desc}</p>
-              </div>
-            </Link>
+      <div style={{ maxWidth:1200, margin:"0 auto", padding:"28px 24px 0" }}>
+        {/* Info strip */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginBottom:28 }}>
+          {[
+            { label:"Academic Year", value:"2025–26", sub:"Current Session" },
+            { label:"Affiliation",   value:"CBSE",    sub:"School No. 1234" },
+            { label:"Competition",   value:"Breach@trix Finals", sub:"8th May 2026" },
+          ].map(c => (
+            <div key={c.label} style={{ background:"#fff", borderRadius:12, padding:"18px 22px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:"1px solid var(--cc-border)" }}>
+              <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>{c.label}</div>
+              <div style={{ fontSize:17, fontWeight:900, color:"var(--cc-navy)" }}>{c.value}</div>
+              <div style={{ fontSize:12, color:"var(--cc-text-muted)", marginTop:2 }}>{c.sub}</div>
+            </div>
           ))}
-        </section>
+        </div>
 
-        {/* Secondary Info Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Announcements Card */}
-          <div className="p-6 rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Recent Announcements</h2>
-            <div className="space-y-4">
-              {ANNOUNCEMENTS.map((a, i) => (
-                <div key={i} className="flex items-center gap-4 text-sm group cursor-default">
-                  <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 group-hover:bg-cyan-500/20 transition-colors">
-                    {a.icon}
-                  </span>
-                  <span className="text-slate-300">{a.text}</span>
+        {/* Quick Links */}
+        <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2, marginBottom:14 }}>Quick Access</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:28 }}>
+          {QUICK_LINKS.map(card => {
+            const Icon = card.icon;
+            return (
+              <Link key={card.href} href={card.href} style={{ textDecoration:"none" }}>
+                <div style={{ background:"#fff", borderRadius:12, padding:"18px 20px", border:"1px solid var(--cc-border)", borderLeft:`4px solid ${card.accent}`, boxShadow:"0 2px 8px rgba(0,0,0,0.04)", display:"flex", alignItems:"flex-start", gap:14, transition:"box-shadow 0.2s,transform 0.2s", cursor:"pointer" }}
+                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.boxShadow="0 6px 24px rgba(0,0,0,0.12)";(e.currentTarget as HTMLElement).style.transform="translateY(-2px)"}}
+                  onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.boxShadow="0 2px 8px rgba(0,0,0,0.04)";(e.currentTarget as HTMLElement).style.transform="none"}}>
+                  <div style={{ width:36, height:36, borderRadius:8, background:card.accent+"18", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <Icon style={{ width:18, height:18, color:card.accent }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:800, color:"var(--cc-navy)", marginBottom:2 }}>{card.label}</div>
+                    <div style={{ fontSize:12, color:"var(--cc-text-muted)" }}>{card.desc}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* System Info Card */}
-          <div className="p-6 rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">System Status</h2>
-            <div className="space-y-3">
-              {[
-                { label: "Portal Version", value: "v2.3.1" },
-                { label: "Framework", value: "Next.js 14" },
-                { label: "Database", value: "SQLite (campus.db)", highlight: true },
-                { label: "Environment", value: "DEVELOPMENT", status: "bg-yellow-500/20 text-yellow-500" },
-                { label: "Debug Mode", value: "ENABLED", status: "bg-red-500/20 text-red-500" },
-              ].map((row, i) => (
-                <div key={i} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0">
-                  <span className="text-sm text-slate-500">{row.label}</span>
-                  {row.status ? (
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${row.status}`}>
-                      {row.value}
-                    </span>
-                  ) : (
-                    <span className="text-sm text-slate-300 font-mono">{row.value}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-500">
-            © 2026 Greenfield International School · <span className="text-slate-600">Secure Node OS</span>
-          </p>
-          <div className="flex gap-6">
-            {["Login", "Notices", "Leaderboard", "Register"].map((link) => (
-              <Link key={link} href={`/${link.toLowerCase()}`} className="text-xs text-slate-500 hover:text-cyan-400 transition-colors">
-                {link}
               </Link>
+            );
+          })}
+        </div>
+
+        {/* Announcements + System Status */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:40 }}>
+          <div style={{ background:"#fff", borderRadius:12, padding:24, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:"1px solid var(--cc-border)" }}>
+            <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2, marginBottom:18 }}>Recent Announcements</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {ANNOUNCEMENTS.map((a,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:14 }}>
+                  <div style={{ width:44, height:44, borderRadius:"50%", background:"var(--cc-orange)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, flexDirection:"column" }}>
+                    <span style={{ fontSize:9, fontWeight:800, color:"#fff", textAlign:"center", lineHeight:1.2 }}>{a.date}</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"var(--cc-text)" }}>{a.text}</div>
+                    <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-orange)", textTransform:"uppercase", letterSpacing:0.5 }}>{a.type}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background:"#fff", borderRadius:12, padding:24, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:"1px solid var(--cc-border)" }}>
+            <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2, marginBottom:18 }}>System Status</div>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <tbody>
+                {[
+                  { label:"Portal Version", value:"v2.3.1",           st:null       },
+                  { label:"Framework",      value:"Next.js 14",        st:null       },
+                  { label:"Database",       value:"SQLite (campus.db)", st:null      },
+                  { label:"Environment",    value:"DEVELOPMENT",        st:"warning" },
+                  { label:"Debug Mode",     value:"ENABLED",            st:"danger"  },
+                ].map((row,i,arr) => (
+                  <tr key={i} style={{ borderBottom:i<arr.length-1?"1px solid var(--cc-border)":"none" }}>
+                    <td style={{ padding:"9px 0", fontSize:13, color:"var(--cc-text-muted)", fontWeight:600 }}>{row.label}</td>
+                    <td style={{ padding:"9px 0", textAlign:"right" }}>
+                      {row.st==="warning"
+                        ? <span style={{ fontSize:10, fontWeight:800, background:"rgba(202,138,4,0.12)", color:"#b45309", border:"1px solid rgba(202,138,4,0.25)", borderRadius:20, padding:"2px 10px", textTransform:"uppercase" }}>{row.value}</span>
+                        : row.st==="danger"
+                        ? <span style={{ fontSize:10, fontWeight:800, background:"rgba(220,38,38,0.10)", color:"#dc2626", border:"1px solid rgba(220,38,38,0.25)", borderRadius:20, padding:"2px 10px", textTransform:"uppercase" }}>{row.value}</span>
+                        : <span style={{ fontSize:12, color:"var(--cc-navy)", fontFamily:"'DM Mono',monospace", fontWeight:500 }}>{row.value}</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ background:"#fff", borderTop:"1px solid var(--cc-border)", padding:"18px 24px" }}>
+        <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+          <div style={{ fontSize:12, color:"var(--cc-text-muted)" }}>
+            © 2026 Greenfield International School &nbsp;·&nbsp; Powered by <strong style={{ color:"var(--cc-navy)" }}>Entab CampusCare</strong>
+          </div>
+          <div style={{ display:"flex", gap:20 }}>
+            {[["Login","/login"],["Notices","/notices"],["Leaderboard","/leaderboard"],["Register","/register"]].map(([label,href])=>(
+              <Link key={href} href={href} style={{ fontSize:12, color:"var(--cc-text-muted)", textDecoration:"none", fontWeight:600 }}>{label}</Link>
             ))}
           </div>
-        </footer>
-      </main>
+        </div>
+      </footer>
     </div>
   );
 }

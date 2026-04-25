@@ -1,6 +1,0 @@
-node_modules
-.next
-.git
-campus.db-shm
-campus.db-wal
-*.md

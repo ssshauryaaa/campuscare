@@ -20,6 +20,15 @@ interface FormState {
 
 interface FieldError { [k: string]: string }
 
+const inputStyle = (err?: boolean): React.CSSProperties => ({
+  width:"100%", border:`1.5px solid ${err ? "#dc2626" : "var(--cc-border)"}`, borderRadius:7, padding:"10px 13px",
+  fontSize:13, color:"var(--cc-text)", outline:"none", background:"#fafafa", boxSizing:"border-box", transition:"border-color 0.2s",
+});
+
+const labelStyle: React.CSSProperties = {
+  display:"block", fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:5,
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>({
@@ -101,159 +110,151 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100 flex flex-col font-sans selection:bg-emerald-500/30">
-      {/* Top bar */}
-      <header className="border-b border-white/5 bg-[#0f0f0f]/80 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-20">
-        <Link href="/" className="text-emerald-500 font-black tracking-tighter text-lg">
-          🏫 CampusCare
+    <div style={{ minHeight:"100vh", background:"var(--cc-bg)", display:"flex", flexDirection:"column" }}>
+
+      {/* Top Bar */}
+      <header style={{ background:"#fff", borderBottom:"1px solid var(--cc-border)", padding:"0 24px", height:56, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:20 }}>
+        <Link href="/" style={{ display:"flex", alignItems:"center", gap:10, textDecoration:"none" }}>
+          <div style={{ width:30, height:30, borderRadius:"50%", background:"var(--cc-navy)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:12 }}>C</div>
+          <div>
+            <div style={{ fontWeight:900, color:"var(--cc-navy)", fontSize:14 }}>CampusCare</div>
+            <div style={{ fontSize:8, color:"var(--cc-orange)", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>by Entab</div>
+          </div>
         </Link>
-        <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
-          Greenfield International School
-        </div>
+        <span style={{ fontSize:11, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>Greenfield International School</span>
       </header>
 
-      {/* Main Body */}
-      <main className="flex-1 flex justify-center py-12 px-6">
-        <div className="w-full max-w-[540px]">
-          
-          <div className="mb-8">
-            <h1 className="text-3xl font-black tracking-tight mb-2">Create Identity</h1>
-            <p className="text-gray-500 text-sm">Enroll into the Greenfield educational network.</p>
+      <main style={{ flex:1, display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"36px 24px" }}>
+        <div style={{ width:"100%", maxWidth:560 }}>
+
+          {/* Card Header */}
+          <div style={{ background:"var(--cc-navy)", borderRadius:"12px 12px 0 0", padding:"16px 24px", display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:28, height:28, borderRadius:"50%", background:"var(--cc-orange)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:11 }}>C</div>
+            <div>
+              <div style={{ color:"#fff", fontWeight:800, fontSize:14 }}>CampusCare Registration</div>
+              <div style={{ color:"rgba(255,255,255,0.6)", fontSize:11 }}>Enroll into the Greenfield educational network</div>
+            </div>
           </div>
 
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-8 shadow-2xl space-y-6">
-            
-            {/* Full Name */}
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Full Name</label>
-              <input
-                type="text"
-                value={form.full_name}
-                onChange={e => set("full_name", e.target.value)}
-                placeholder="Aryan Kumar"
-                className={`w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-emerald-500/50 outline-none transition-all ${errors.full_name && 'border-red-500/50'}`}
-              />
-              {errors.full_name && <p className="text-[10px] font-mono text-red-400 mt-2">{errors.full_name}</p>}
-            </div>
+          {/* Card Body */}
+          <div style={{ background:"#fff", borderRadius:"0 0 12px 12px", padding:28, border:"1px solid var(--cc-border)", borderTop:"none", boxShadow:"0 4px 20px rgba(0,0,0,0.07)" }}>
 
-            {/* Username - THE VULNERABILITY SURFACE */}
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex justify-between">
-                Username <span>(Live Sync)</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={form.username}
-                 onChange={e => set("username", e.target.value)}
-                  placeholder="aryan.k"
-                  className={`w-full bg-black border rounded-lg px-4 py-3 text-sm font-mono outline-none transition-all ${
-                    usernameStatus === "taken" ? "border-red-500/50" : 
-                    usernameStatus === "available" ? "border-emerald-500/50" : "border-white/10"
-                  }`}
-                />
+            {/* Row 1: Full Name + Username */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+              <div>
+                <label style={labelStyle}>Full Name</label>
+                <input type="text" value={form.full_name} onChange={e=>set("full_name",e.target.value)} placeholder="Aryan Kumar"
+                  style={inputStyle(!!errors.full_name)}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor=errors.full_name?"#dc2626":"var(--cc-border)")} />
+                {errors.full_name && <p style={{ fontSize:10, color:"#dc2626", margin:"4px 0 0", fontFamily:"'DM Mono',monospace" }}>{errors.full_name}</p>}
               </div>
-              <div className="mt-2 min-h-[16px]">
-                {usernameStatus === "checking" && <span className="text-[10px] font-mono text-gray-500 animate-pulse italic">Scanning directory...</span>}
-                {usernameStatus === "taken" && <span className="text-[10px] font-mono text-red-400">🔴 Error: Identity already indexed in database.</span>}
-                {usernameStatus === "available" && <span className="text-[10px] font-mono text-emerald-400">✓ Unique identifier confirmed.</span>}
-                {errors.username && <p className="text-[10px] font-mono text-red-400">{errors.username}</p>}
-              </div>
-            </div>
-
-            {/* Password Cluster */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Password</label>
-                  <button onClick={() => setShowPass(!showPass)} className="text-[10px] text-emerald-500 font-mono">
-                    {showPass ? "Hide" : "Show"}
-                  </button>
+              <div>
+                <label style={labelStyle}>Username <span style={{ fontWeight:500, color:"var(--cc-text-muted)" }}>(Live Sync)</span></label>
+                <input type="text" value={form.username} onChange={e=>set("username",e.target.value)} placeholder="aryan.k"
+                  style={{ ...inputStyle(!!errors.username), borderColor: usernameStatus==="taken"?"#dc2626": usernameStatus==="available"?"#16a34a":errors.username?"#dc2626":"var(--cc-border)", fontFamily:"'DM Mono',monospace" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+                <div style={{ minHeight:16, marginTop:4 }}>
+                  {usernameStatus==="checking" && <span style={{ fontSize:10, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace" }}>Scanning directory...</span>}
+                  {usernameStatus==="taken" && <span style={{ fontSize:10, color:"#dc2626", fontFamily:"'DM Mono',monospace" }}>🔴 Error: Identity already indexed in database.</span>}
+                  {usernameStatus==="available" && <span style={{ fontSize:10, color:"#16a34a", fontFamily:"'DM Mono',monospace" }}>✓ Unique identifier confirmed.</span>}
+                  {errors.username && <p style={{ fontSize:10, color:"#dc2626", margin:0, fontFamily:"'DM Mono',monospace" }}>{errors.username}</p>}
                 </div>
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={form.password}
-                  onChange={e => set("password", e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-emerald-500/50 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Confirm</label>
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={form.confirm_password}
-                  onChange={e => set("confirm_password", e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-emerald-500/50 outline-none"
-                />
               </div>
             </div>
 
-            {/* Academic Details (Sub-Section) */}
-            <div className="pt-6 border-t border-white/5 space-y-4">
-              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">Academic Metadata</p>
-              <div className="grid grid-cols-3 gap-3">
-                <select 
-                  onChange={e => set("class", e.target.value)}
-                  className="bg-black border border-white/10 rounded-lg px-3 py-3 text-xs outline-none focus:border-emerald-500/50 appearance-none"
-                >
+            {/* Row 2: Email */}
+            <div style={{ marginBottom:16 }}>
+              <label style={labelStyle}>Email Address</label>
+              <input type="email" value={form.email} onChange={e=>set("email",e.target.value)} placeholder="aryan@student.greenfield.edu"
+                style={inputStyle(!!errors.email)}
+                onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+            </div>
+
+            {/* Row 3: Class + Section + Admission No */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+              <div>
+                <label style={labelStyle}>Class</label>
+                <select onChange={e=>set("class",e.target.value)} style={{ ...inputStyle(), appearance:"none", cursor:"pointer" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}>
                   <option value="">Class</option>
                   <option>XI</option><option>XII</option>
                 </select>
-                <select 
-                  onChange={e => set("section", e.target.value)}
-                  className="bg-black border border-white/10 rounded-lg px-3 py-3 text-xs outline-none focus:border-emerald-500/50 appearance-none"
-                >
+              </div>
+              <div>
+                <label style={labelStyle}>Section</label>
+                <select onChange={e=>set("section",e.target.value)} style={{ ...inputStyle(), appearance:"none", cursor:"pointer" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}>
                   <option value="">Sec</option>
                   <option>A</option><option>B</option>
                 </select>
-                <input
-                  type="text"
-                  placeholder="ID Number"
-                  onChange={e => set("admission_no", e.target.value)}
-                  className="bg-black border border-white/10 rounded-lg px-3 py-3 text-xs outline-none font-mono focus:border-emerald-500/50 col-span-1"
-                />
+              </div>
+              <div>
+                <label style={labelStyle}>Admission No</label>
+                <input type="text" placeholder="ADM-001" onChange={e=>set("admission_no",e.target.value)}
+                  style={{ ...inputStyle(), fontFamily:"'DM Mono',monospace" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+              </div>
+            </div>
+
+            {/* Row 4: Password + Confirm */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }}>
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                  <label style={{ ...labelStyle, marginBottom:0 }}>Password</label>
+                  <button onClick={()=>setShowPass(!showPass)} style={{ fontSize:10, color:"var(--cc-orange)", background:"none", border:"none", cursor:"pointer", fontWeight:700, textTransform:"uppercase" }}>
+                    {showPass?"Hide":"Show"}
+                  </button>
+                </div>
+                <input type={showPass?"text":"password"} value={form.password} onChange={e=>set("password",e.target.value)}
+                  style={inputStyle(!!errors.password)}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+                {errors.password && <p style={{ fontSize:10, color:"#dc2626", margin:"4px 0 0", fontFamily:"'DM Mono',monospace" }}>{errors.password}</p>}
+              </div>
+              <div>
+                <label style={labelStyle}>Confirm Password</label>
+                <input type={showPass?"text":"password"} value={form.confirm_password} onChange={e=>set("confirm_password",e.target.value)}
+                  style={inputStyle(!!errors.confirm_password)}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+                {errors.confirm_password && <p style={{ fontSize:10, color:"#dc2626", margin:"4px 0 0", fontFamily:"'DM Mono',monospace" }}>{errors.confirm_password}</p>}
               </div>
             </div>
 
             {serverError && (
-              <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-lg">
-                <p className="text-[10px] font-mono text-red-400 tracking-tight">{serverError}</p>
+              <div style={{ background:"rgba(220,38,38,0.06)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:8, padding:"10px 14px", marginBottom:16 }}>
+                <p style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"#dc2626", margin:0 }}>{serverError}</p>
               </div>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={loading || usernameStatus === "taken"}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-black font-black py-4 rounded-xl text-sm transition-all transform active:scale-95"
-            >
-              {loading ? "INITIALIZING ACCOUNT..." : "FINALIZE REGISTRATION →"}
+            <button onClick={handleSubmit} disabled={loading || usernameStatus==="taken"}
+              style={{ width:"100%", background: loading||usernameStatus==="taken" ? "#d1d5db" : "var(--cc-orange)", color:"#fff", border:"none", borderRadius:8, padding:"13px 0", fontSize:14, fontWeight:900, cursor: loading?"not-allowed":"pointer", transition:"background 0.2s" }}>
+              {loading ? "Creating Account…" : "Create Account →"}
             </button>
-          </div>
 
-          {/* Footer Link */}
-          <div className="mt-8 flex justify-between items-center text-xs text-gray-500 px-2">
-            <p>Already have an ID? <Link href="/login" className="text-emerald-500 hover:underline">Login here</Link></p>
-            <span className="font-mono text-[10px] opacity-50">SYS_ADMIN: admin@campuscare.local</span>
-          </div>
+            <div style={{ marginTop:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>
+                Already have an account? <Link href="/login" style={{ color:"var(--cc-orange)", fontWeight:700, textDecoration:"none" }}>Login here</Link>
+              </p>
+              <span style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", opacity:0.6 }}>SYS_ADMIN: admin@campuscare.local</span>
+            </div>
 
-          {/* Explicit Vulnerability Note */}
-          <div className="mt-12 p-5 bg-amber-500/5 border border-amber-500/10 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-2 opacity-20 text-2xl group-hover:rotate-12 transition-transform italic">DEV</div>
-            <p className="text-[10px] font-mono text-amber-500/70 leading-relaxed uppercase tracking-tighter">
-              <span className="font-black bg-amber-500 text-black px-1 mr-2">SEC_ALERT</span> 
-              Development build active. Password encryption (Bcrypt) disabled for debugging. 
-              Username enumeration vulnerability present in live-check module.
-            </p>
+            {/* Explicit Vulnerability Note */}
+            <div style={{ marginTop:20, padding:"12px 16px", background:"rgba(245,158,11,0.06)", border:"1.5px solid rgba(245,158,11,0.2)", borderRadius:8, position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", top:4, right:8, fontSize:20, opacity:0.12, fontStyle:"italic", fontWeight:900 }}>DEV</div>
+              <p style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"rgba(180,83,9,0.85)", lineHeight:1.6, margin:0, textTransform:"uppercase", letterSpacing:0.5 }}>
+                <span style={{ fontWeight:900, background:"rgba(180,83,9,0.15)", padding:"1px 4px", borderRadius:2 }}>SEC_ALERT</span>{" "}
+                Development build active. Password encryption (Bcrypt) disabled for debugging.
+                Username enumeration vulnerability present in live-check module.
+              </p>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Footer bar */}
-      <footer className="border-t border-white/5 px-8 py-4 flex justify-between items-center text-[10px] text-gray-600 font-mono">
-        <span>CampusCare v2.3.1_STABLE</span>
-        <span className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          ENVIRONMENT: <span className="text-amber-500">DEVELOPMENT_MODE</span>
+      <footer style={{ background:"#fff", borderTop:"1px solid var(--cc-border)", padding:"10px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <span style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>CampusCare v2.3.1_STABLE</span>
+        <span style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ width:6, height:6, borderRadius:"50%", background:"#d97706", display:"inline-block" }}/>
+          ENV: <span style={{ color:"#d97706" }}>DEVELOPMENT_MODE</span>
         </span>
       </footer>
     </div>

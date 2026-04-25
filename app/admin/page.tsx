@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { ShieldAlert } from "lucide-react";
 
 type Tab = "flags" | "notices" | "users" | "submissions";
 
@@ -53,251 +54,183 @@ export default function AdminPage() {
   };
 
   const TABS: { key: Tab; label: string; count: number }[] = [
-    { key: "flags",       label: "Flags",       count: flags.length       },
-    { key: "notices",     label: "Notices",     count: notices.length     },
-    { key: "users",       label: "Users",       count: users.length       },
-    { key: "submissions", label: "Submissions", count: subs.length        },
+    { key:"flags",       label:"Flags",       count:flags.length       },
+    { key:"notices",     label:"Notices",     count:notices.length     },
+    { key:"users",       label:"Users",       count:users.length       },
+    { key:"submissions", label:"Submissions", count:subs.length        },
   ];
 
+  const th = (label: string) => (
+    <th key={label} style={{ padding:"9px 14px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{label}</th>
+  );
+
+  const td = (content: React.ReactNode, mono=false) => (
+    <td style={{ padding:"10px 14px", fontSize:12, color:"var(--cc-text)", fontFamily: mono?"'DM Mono',monospace":"inherit" }}>{content}</td>
+  );
+
+  const inputStyle: React.CSSProperties = {
+    width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:7, padding:"9px 12px",
+    fontSize:13, color:"var(--cc-text)", outline:"none", background:"#fafafa", boxSizing:"border-box", transition:"border-color 0.2s",
+  };
+
   return (
-    <>
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px" }}>
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:1100 }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <h1 style={{ fontSize: 22, fontWeight: "bold", margin: 0, letterSpacing: -0.5 }}>Admin Panel</h1>
-              <span style={{
-                fontSize: 10, background: "rgba(239,68,68,0.12)", color: "#fca5a5",
-                border: "1px solid rgba(239,68,68,0.25)", borderRadius: 3,
-                padding: "2px 7px", textTransform: "uppercase", letterSpacing: 0.5,
-              }}>Restricted</span>
-            </div>
-            <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
-              Greenfield International School — System Administration
-            </p>
+          {/* Warning Banner */}
+          <div style={{ background:"rgba(220,38,38,0.07)", border:"1.5px solid rgba(220,38,38,0.25)", borderRadius:10, padding:"12px 18px", marginBottom:22, display:"flex", alignItems:"center", gap:10 }}>
+            <ShieldAlert style={{ width:18, height:18, color:"#dc2626", flexShrink:0 }} />
+            <p style={{ fontSize:12, fontWeight:800, color:"#dc2626", margin:0 }}>⚠ Admin Access — Restricted Personnel Only</p>
           </div>
-        </div>
 
-        {/* Access denied */}
-        {error && !loading && (
-          <div style={{
-            background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: 8, padding: "16px 20px", marginBottom: 24,
-          }}>
-            <div style={{ color: "#fca5a5", fontWeight: "bold", marginBottom: 6 }}>⛔ {error}</div>
-            <div style={{ fontSize: 13, color: "var(--muted)", fontFamily: "monospace" }}>
-              Your JWT must contain <span style={{ color: "#fca5a5" }}>"role": "admin"</span>.
-              Go to <a href="/jwt-debug" style={{ color: "var(--accent)" }}>/jwt-debug</a> to forge your token.
-            </div>
+          {/* Header */}
+          <div style={{ marginBottom:20 }}>
+            <h1 style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", margin:"0 0 3px" }}>Admin Panel</h1>
+            <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Greenfield International School — System Administration</p>
           </div>
-        )}
 
-        {/* Tabs */}
-        <div style={{
-          display: "flex", gap: 0,
-          background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 6, overflow: "hidden",
-          width: "fit-content", marginBottom: 24,
-        }}>
-          {TABS.map((t, i) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              style={{
-                background: tab === t.key ? "rgba(34,197,94,0.1)" : "transparent",
-                color: tab === t.key ? "var(--accent)" : "var(--muted)",
-                border: "none",
-                borderRight: i < TABS.length - 1 ? "1px solid var(--border)" : "none",
-                padding: "9px 20px", fontSize: 13,
-                fontFamily: "monospace", cursor: "pointer", transition: "all 0.15s",
-                display: "flex", alignItems: "center", gap: 8,
-              }}
-            >
-              {t.label}
-              {t.count > 0 && (
-                <span style={{
-                  background: tab === t.key ? "rgba(34,197,94,0.2)" : "var(--border)",
-                  color: tab === t.key ? "var(--accent)" : "var(--muted)",
-                  borderRadius: 10, padding: "1px 7px", fontSize: 11,
-                }}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* LOADING */}
-        {loading && (
-          <div style={{ height: 200, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, opacity: 0.4 }} />
-        )}
-
-        {/* FLAGS */}
-        {!loading && tab === "flags" && (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-            <div style={{
-              display: "grid", gridTemplateColumns: "36px 160px 1fr 90px 60px 1fr",
-              padding: "9px 18px", borderBottom: "1px solid var(--border)",
-              fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5,
-            }}>
-              <span>#</span><span>Name</span><span>Flag Value</span>
-              <span>Difficulty</span><span>Pts</span><span>Hint</span>
+          {/* Access Denied */}
+          {error && !loading && (
+            <div style={{ background:"rgba(220,38,38,0.06)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:8, padding:"14px 18px", marginBottom:18 }}>
+              <div style={{ fontWeight:800, color:"#dc2626", marginBottom:6 }}>⛔ {error}</div>
+              <div style={{ fontSize:12, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace" }}>
+                Your JWT must contain <span style={{ color:"#dc2626" }}>&quot;role&quot;: &quot;admin&quot;</span>.
+                Go to <a href="/jwt-debug" style={{ color:"var(--cc-orange)" }}>/jwt-debug</a> to forge your token.
+              </div>
             </div>
-            {flags.length === 0 ? (
-              <div style={{ padding: "32px 18px", color: "var(--muted)", fontSize: 13 }}>
-                No access — role must be "admin" in JWT.
-              </div>
-            ) : flags.map((f, i) => (
-              <div key={f.id} style={{
-                display: "grid", gridTemplateColumns: "36px 160px 1fr 90px 60px 1fr",
-                padding: "13px 18px",
-                borderBottom: i < flags.length - 1 ? "1px solid var(--border)" : "none",
-                alignItems: "center", transition: "background 0.15s",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ color: "var(--muted)", fontSize: 12 }}>{f.id}</span>
-                <span style={{ fontFamily: "monospace", fontSize: 12 }}>{f.flag_name}</span>
-                <span>
-                  <span style={{
-                    fontFamily: "monospace", fontSize: 11,
-                    background: "#0a1a0a", border: "1px dashed rgba(34,197,94,0.3)",
-                    color: "var(--accent)", borderRadius: 4, padding: "3px 8px",
-                  }}>{f.flag_value}</span>
-                </span>
-                <span>
-                  <span className={`badge ${f.difficulty === "easy" ? "badge-green" : f.difficulty === "medium" ? "badge-yellow" : f.difficulty === "hard" ? "badge-red" : "badge-blue"}`}
-                    style={{ fontSize: 10 }}>
-                    {f.difficulty}
-                  </span>
-                </span>
-                <span style={{ color: "var(--accent)", fontWeight: "bold", fontSize: 13 }}>{f.points}</span>
-                <span style={{ color: "var(--muted)", fontSize: 12 }}>{f.hint}</span>
-              </div>
+          )}
+
+          {/* Tabs */}
+          <div style={{ display:"flex", gap:0, borderBottom:"2px solid var(--cc-border)", marginBottom:20 }}>
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                style={{ padding:"10px 20px", fontSize:13, fontWeight:700, border:"none", background:"transparent", cursor:"pointer", transition:"all 0.15s", borderBottom: tab===t.key?"2px solid var(--cc-orange)":"2px solid transparent", marginBottom:-2, color: tab===t.key?"var(--cc-orange)":"var(--cc-text-muted)", display:"flex", alignItems:"center", gap:6 }}>
+                {t.label}
+                {t.count > 0 && (
+                  <span style={{ fontSize:10, fontWeight:800, padding:"1px 7px", borderRadius:20, background: tab===t.key?"rgba(245,130,10,0.12)":"var(--cc-border)", color: tab===t.key?"var(--cc-orange)":"var(--cc-text-muted)" }}>{t.count}</span>
+                )}
+              </button>
             ))}
           </div>
-        )}
 
-        {/* NOTICES */}
-        {!loading && tab === "notices" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: 24 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 16 }}>Post New Notice</div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 7 }}>Title</label>
-                <input value={newNotice.title} onChange={e => setNew({ ...newNotice, title: e.target.value })} placeholder="Notice title"
-                  style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 5, padding: "9px 12px", color: "var(--text)", fontSize: 13, fontFamily: "monospace", outline: "none" }}
-                  onFocus={e => e.target.style.borderColor = "var(--accent)"}
-                  onBlur={e => e.target.style.borderColor = "var(--border)"} />
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 7 }}>Content</label>
-                <textarea value={newNotice.content} onChange={e => setNew({ ...newNotice, content: e.target.value })} rows={3} placeholder="Notice content..."
-                  style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 5, padding: "9px 12px", color: "var(--text)", fontSize: 13, fontFamily: "monospace", outline: "none", resize: "vertical" }}
-                  onFocus={e => e.target.style.borderColor = "var(--accent)"}
-                  onBlur={e => e.target.style.borderColor = "var(--border)"} />
-              </div>
-              {noticeMsg && <div style={{ marginBottom: 10, fontSize: 13, color: "var(--accent)" }}>✓ {noticeMsg}</div>}
-              <button onClick={postNotice}>Post Notice →</button>
+          {loading && <div style={{ height:200, background:"#fff", borderRadius:10, border:"1px solid var(--cc-border)", opacity:0.4 }} />}
+
+          {/* FLAGS */}
+          {!loading && tab==="flags" && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr style={{ background:"var(--cc-navy)" }}>
+                  {["#","Name","Flag Value","Difficulty","Pts","Hint"].map(th)}
+                </tr></thead>
+                <tbody>
+                  {flags.length === 0 ? (
+                    <tr><td colSpan={6} style={{ padding:24, color:"var(--cc-text-muted)", fontSize:13 }}>No access — role must be &quot;admin&quot; in JWT.</td></tr>
+                  ) : flags.map((f, i) => (
+                    <tr key={f.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
+                      {td(f.id, true)}
+                      {td(<span style={{ fontFamily:"'DM Mono',monospace", fontSize:11 }}>{f.flag_name}</span>)}
+                      {td(<span style={{ fontFamily:"'DM Mono',monospace", fontSize:11, background:"rgba(26,60,110,0.07)", color:"var(--cc-navy)", border:"1px dashed rgba(26,60,110,0.25)", borderRadius:4, padding:"2px 8px" }}>{f.flag_value}</span>)}
+                      {td(<span className={`badge ${f.difficulty==="easy"?"badge-green":f.difficulty==="medium"?"badge-yellow":f.difficulty==="hard"?"badge-red":"badge-blue"}`}>{f.difficulty}</span>)}
+                      {td(<span style={{ fontWeight:800, color:"var(--cc-orange)" }}>{f.points}</span>)}
+                      {td(f.hint)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
 
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-              <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--border)", fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                All Notices (Including Hidden) — {notices.length}
-              </div>
-              {notices.map((n, i) => (
-                <div key={n.id} style={{
-                  display: "grid", gridTemplateColumns: "36px 1fr 100px 80px 120px",
-                  padding: "11px 18px",
-                  borderBottom: i < notices.length - 1 ? "1px solid var(--border)" : "none",
-                  alignItems: "center", fontSize: 13,
-                }}>
-                  <span style={{ color: "var(--muted)", fontSize: 12 }}>{n.id}</span>
-                  <span>{n.title}</span>
-                  <span style={{ color: "var(--muted)", fontSize: 12 }}>{n.author}</span>
-                  <span>{n.is_hidden ? <span className="badge badge-red" style={{ fontSize: 10 }}>HIDDEN</span> : <span className="badge badge-green" style={{ fontSize: 10 }}>PUBLIC</span>}</span>
-                  <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>{new Date(n.created_at).toLocaleDateString()}</span>
+          {/* NOTICES */}
+          {!loading && tab==="notices" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", padding:22, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div style={{ fontSize:11, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:16 }}>Post New Notice</div>
+                <div style={{ marginBottom:12 }}>
+                  <label style={{ display:"block", fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Title</label>
+                  <input value={newNotice.title} onChange={e=>setNew({...newNotice,title:e.target.value})} placeholder="Notice title"
+                    style={inputStyle} onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* USERS */}
-        {!loading && tab === "users" && (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-            <div style={{
-              display: "grid", gridTemplateColumns: "36px 120px 160px 80px 200px 60px 120px",
-              padding: "9px 18px", borderBottom: "1px solid var(--border)",
-              fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5,
-            }}>
-              <span>#</span><span>Username</span><span>Full Name</span><span>Role</span>
-              <span>Email</span><span>Class</span><span>Adm. No</span>
-            </div>
-            {users.map((u, i) => (
-              <div key={u.id} style={{
-                display: "grid", gridTemplateColumns: "36px 120px 160px 80px 200px 60px 120px",
-                padding: "12px 18px",
-                borderBottom: i < users.length - 1 ? "1px solid var(--border)" : "none",
-                alignItems: "center", transition: "background 0.15s",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ color: "var(--muted)", fontSize: 12 }}>{u.id}</span>
-                <span style={{ fontFamily: "monospace", fontSize: 12 }}>{u.username}</span>
-                <span style={{ fontSize: 13 }}>{u.full_name}</span>
-                <span>
-                  <span className={`badge ${u.role === "admin" ? "badge-red" : u.role === "staff" ? "badge-yellow" : "badge-blue"}`} style={{ fontSize: 10 }}>
-                    {u.role}
-                  </span>
-                </span>
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>{u.email}</span>
-                <span style={{ fontSize: 12 }}>{u.class || "—"}</span>
-                <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>{u.admission_no}</span>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:"block", fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Content</label>
+                  <textarea value={newNotice.content} onChange={e=>setNew({...newNotice,content:e.target.value})} rows={3} placeholder="Notice content..."
+                    style={{ ...inputStyle, resize:"vertical", fontFamily:"'DM Mono',monospace" }} onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")} onBlur={e=>(e.target.style.borderColor="var(--cc-border)")} />
+                </div>
+                {noticeMsg && <div style={{ fontSize:13, color:"#16a34a", marginBottom:10 }}>✓ {noticeMsg}</div>}
+                <button onClick={postNotice} style={{ padding:"9px 22px", background:"var(--cc-orange)", color:"#fff", border:"none", borderRadius:7, fontWeight:800, fontSize:13, cursor:"pointer" }}>
+                  Post Notice →
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* SUBMISSIONS */}
-        {!loading && tab === "submissions" && (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
-            <div style={{
-              display: "grid", gridTemplateColumns: "140px 160px 90px 60px 160px",
-              padding: "9px 18px", borderBottom: "1px solid var(--border)",
-              fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5,
-            }}>
-              <span>Username</span><span>Flag Name</span><span>Status</span><span>Pts</span><span>Time</span>
-            </div>
-            {subs.length === 0 ? (
-              <div style={{ padding: "32px 18px", color: "var(--muted)", fontSize: 13 }}>No submissions yet.</div>
-            ) : subs.map((s, i) => (
-              <div key={i} style={{
-                display: "grid", gridTemplateColumns: "140px 160px 90px 60px 160px",
-                padding: "11px 18px",
-                borderBottom: i < subs.length - 1 ? "1px solid var(--border)" : "none",
-                alignItems: "center", transition: "background 0.15s",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ fontFamily: "monospace", fontSize: 12 }}>{s.username}</span>
-                <span style={{ fontSize: 12 }}>{s.flag_name || <span style={{ color: "var(--muted)" }}>—</span>}</span>
-                <span>{s.correct ? <span className="badge badge-green" style={{ fontSize: 10 }}>CORRECT</span> : <span className="badge badge-red" style={{ fontSize: 10 }}>WRONG</span>}</span>
-                <span style={{ fontWeight: "bold", color: s.correct ? "var(--accent)" : "var(--muted)", fontSize: 13 }}>
-                  {s.correct ? `+${s.points}` : "—"}
-                </span>
-                <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
-                  {new Date(s.submitted_at).toLocaleString()}
-                </span>
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div style={{ padding:"11px 18px", borderBottom:"1px solid var(--cc-border)", fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5 }}>
+                  All Notices ({notices.length})
+                </div>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead><tr style={{ background:"var(--cc-navy)" }}>
+                    {["#","Title","Author","Visibility","Date"].map(th)}
+                  </tr></thead>
+                  <tbody>
+                    {notices.map((n, i) => (
+                      <tr key={n.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
+                        {td(n.id, true)}{td(n.title)}{td(n.author)}
+                        {td(n.is_hidden ? <span className="badge badge-red">HIDDEN</span> : <span className="badge badge-green">PUBLIC</span>)}
+                        {td(new Date(n.created_at).toLocaleDateString("en-IN"), true)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* USERS */}
+          {!loading && tab==="users" && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr style={{ background:"var(--cc-navy)" }}>
+                  {["#","Username","Full Name","Role","Email","Class","Adm. No"].map(th)}
+                </tr></thead>
+                <tbody>
+                  {users.map((u, i) => (
+                    <tr key={u.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
+                      {td(u.id, true)}
+                      {td(<span style={{ fontFamily:"'DM Mono',monospace", fontSize:11 }}>{u.username}</span>)}
+                      {td(u.full_name)}
+                      {td(<span className={`badge ${u.role==="admin"?"badge-red":u.role==="staff"?"badge-yellow":"badge-blue"}`}>{u.role}</span>)}
+                      {td(u.email)}{td(u.class||"—")}{td(u.admission_no, true)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* SUBMISSIONS */}
+          {!loading && tab==="submissions" && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr style={{ background:"var(--cc-navy)" }}>
+                  {["Username","Flag Name","Status","Points","Time"].map(th)}
+                </tr></thead>
+                <tbody>
+                  {subs.length===0 ? (
+                    <tr><td colSpan={5} style={{ padding:24, color:"var(--cc-text-muted)", fontSize:13 }}>No submissions yet.</td></tr>
+                  ) : subs.map((s, i) => (
+                    <tr key={i} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
+                      {td(<span style={{ fontFamily:"'DM Mono',monospace", fontSize:11 }}>{s.username}</span>)}
+                      {td(s.flag_name || "—")}
+                      {td(s.correct ? <span className="badge badge-green">CORRECT</span> : <span className="badge badge-red">WRONG</span>)}
+                      {td(<span style={{ fontWeight:800, color: s.correct?"var(--cc-orange)":"var(--cc-text-muted)" }}>{s.correct?`+${s.points}`:"—"}</span>)}
+                      {td(new Date(s.submitted_at).toLocaleString("en-IN"), true)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
       </div>
-    </>
+    </div>
   );
 }

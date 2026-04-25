@@ -2,10 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
-import { Trophy, Flame, Swords, Timer, RefreshCw, Award, Target, Skull } from "lucide-react";
+import { Trophy, Flame, Swords, Timer, RefreshCw, Target } from "lucide-react";
 
 interface Score { username: string; total_points: number; flags_captured: number; total_attempts: number; last_submission: string; }
 interface FirstBlood { flag_name: string; username: string; solved_at: string; }
+
+const MEDAL = ["🥈","👑","🥉"];
+const MEDAL_COLOR = ["#9ca3af","#f59e0b","#b45309"];
 
 export default function LeaderboardPage() {
   const [scores, setScores] = useState<Score[]>([]);
@@ -29,11 +32,11 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
-    if (match) { 
-      try { 
+    if (match) {
+      try {
         const payload = JSON.parse(atob(match[1].split(".")[1]));
-        setMe(payload.username); 
-      } catch {} 
+        setMe(payload.username);
+      } catch {}
     }
     load();
     const t = setInterval(load, 15000);
@@ -44,154 +47,134 @@ export default function LeaderboardPage() {
   const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
 
   return (
-    <div className="min-h-screen bg-[#080808] text-zinc-400 selection:bg-yellow-500/30">
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
-      
-      <main className="max-w-5xl mx-auto px-6 py-12 space-y-12">
-        
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/5 pb-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3">
-              <Swords className="text-yellow-500 w-10 h-10" /> HALL_OF_FAME
-            </h1>
-            <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.3em]">
-              Live Scoreboard <span className="text-zinc-700 mx-2">|</span> Syncing Node_01
-            </p>
-          </div>
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:960 }}>
 
-          <div className="mt-6 md:mt-0 flex items-center gap-6">
-            <div className="text-right">
-               <div className="flex items-center gap-2 text-zinc-500 text-[10px] uppercase font-bold tracking-widest mb-1">
-                 <Timer className="w-3 h-3" /> Auto-Refresh
-               </div>
-               <div className="text-white font-mono text-sm">
-                 {lastUpdated ? lastUpdated.toLocaleTimeString() : "--:--:--"}
-               </div>
+          {/* Header Banner */}
+          <div style={{ background:"linear-gradient(135deg,var(--cc-navy) 0%,#2d5f8a 100%)", borderRadius:12, padding:"22px 28px", marginBottom:22, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16 }}>
+            <div>
+              <h1 style={{ fontSize:22, fontWeight:900, color:"#fff", margin:"0 0 4px", display:"flex", alignItems:"center", gap:10 }}>
+                <Trophy style={{ width:22, height:22, color:"var(--cc-orange)" }} />
+                Breach@trix Live Scoreboard
+              </h1>
+              <p style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"rgba(255,255,255,0.6)", margin:0, textTransform:"uppercase", letterSpacing:2 }}>
+                Auto-refreshing every 15 seconds
+              </p>
             </div>
-            <button 
-              onClick={load}
-              className="p-3 rounded-xl bg-zinc-900 border border-white/5 hover:bg-zinc-800 transition-all active:scale-95 group"
-            >
-              <RefreshCw className={`w-5 h-5 text-zinc-400 group-hover:text-yellow-500 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </header>
-
-        {/* Podium Section */}
-        {!loading && scores.length >= 1 && (
-          <section className="grid grid-cols-3 gap-4 items-end max-w-3xl mx-auto pt-12 pb-4">
-            {podiumOrder.map((s, i) => {
-              const isFirst = s?.username === scores[0]?.username;
-              const isMe = s?.username === me;
-              
-              return (
-                <div key={s.username} className="flex flex-col items-center group relative">
-                  {/* Avatar / Rank Icon */}
-                  <div className={`mb-4 p-1 rounded-full border-2 transition-transform duration-500 group-hover:-translate-y-2 ${isFirst ? 'border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'border-zinc-700'}`}>
-                    <div className="bg-zinc-900 w-16 h-16 rounded-full flex items-center justify-center text-2xl">
-                      {isFirst ? "👑" : i === 0 ? "🥈" : "🥉"}
-                    </div>
-                  </div>
-
-                  {/* Podium Base */}
-                  <div className={`w-full rounded-t-2xl flex flex-col items-center p-6 border-x border-t transition-all ${
-                    isFirst 
-                      ? 'h-48 bg-gradient-to-b from-yellow-500/20 to-transparent border-yellow-500/30' 
-                      : i === 0 ? 'h-36 bg-zinc-900/80 border-zinc-700' : 'h-28 bg-zinc-900/40 border-zinc-800'
-                  }`}>
-                    <span className={`font-black tracking-tight text-lg truncate w-full text-center ${isFirst ? 'text-white' : 'text-zinc-400'}`}>
-                      {s.username}
-                    </span>
-                    <span className={`text-2xl font-black font-mono ${isFirst ? 'text-yellow-500' : 'text-zinc-500'}`}>
-                      {s.total_points}
-                    </span>
-                    <div className="mt-2 text-[10px] uppercase font-bold tracking-widest text-zinc-600">
-                      {s.flags_captured} Flags
-                    </div>
-                    {isMe && <div className="mt-auto px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[9px] rounded-full font-bold">YOU</div>}
-                  </div>
+            <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:9, fontWeight:700, color:"var(--cc-orange)", textTransform:"uppercase", letterSpacing:2, marginBottom:2 }}>
+                  <Timer style={{ width:10, height:10, display:"inline-block", verticalAlign:"middle", marginRight:4 }} />Last Sync
                 </div>
-              );
-            })}
-          </section>
-        )}
-
-        {/* Main Leaderboard Table */}
-        <section className="bg-zinc-900/20 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm shadow-2xl">
-          <div className="grid grid-cols-6 px-8 py-4 bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5">
-            <span className="col-span-1">Rank</span>
-            <span className="col-span-2">Operative</span>
-            <span>Efficiency</span>
-            <span>Score</span>
-            <span className="text-right">Last Signal</span>
-          </div>
-
-          <div className="divide-y divide-white/5">
-            {scores.map((s, i) => (
-              <div 
-                key={s.username} 
-                className={`grid grid-cols-6 px-8 py-5 items-center transition-colors group ${s.username === me ? 'bg-emerald-500/[0.03]' : 'hover:bg-white/[0.02]'}`}
-              >
-                <div className="col-span-1 font-mono font-bold flex items-center gap-3">
-                  <span className={i < 3 ? 'text-yellow-500' : 'text-zinc-700'}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  {i < 3 && <Trophy className="w-3 h-3 text-yellow-500/50" />}
-                </div>
-
-                <div className="col-span-2 flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${s.username === me ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-800'}`} />
-                  <span className={`font-bold ${s.username === me ? 'text-white' : 'text-zinc-300'}`}>
-                    {s.username}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden max-w-[60px]">
-                    <div 
-                      className="h-full bg-emerald-500/50" 
-                      style={{ width: `${(s.flags_captured / (totalFlags || 1)) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono">{s.flags_captured}/{totalFlags}</span>
-                </div>
-
-                <div className="font-black text-white font-mono flex items-center gap-1">
-                  <Target className="w-3 h-3 text-zinc-600" /> {s.total_points}
-                </div>
-
-                <div className="text-right font-mono text-[10px] text-zinc-600">
-                  {new Date(s.last_submission).toLocaleTimeString()}
+                <div style={{ fontFamily:"'DM Mono',monospace", fontSize:13, color:"#fff", fontWeight:700 }}>
+                  {lastUpdated ? lastUpdated.toLocaleTimeString("en-IN") : "--:--:--"}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* First Blood Ticker */}
-        {bloods.length > 0 && (
-          <section className="bg-rose-500/5 border border-rose-500/20 rounded-2xl overflow-hidden p-6">
-            <h3 className="text-rose-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-               <Skull className="w-4 h-4" /> First Blood Archives
-            </h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bloods.map(b => (
-                <div key={b.flag_name} className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-rose-500/10 hover:border-rose-500/30 transition-all group">
-                  <div className="p-2 bg-rose-500/10 rounded-lg group-hover:scale-110 transition-transform">
-                    <Flame className="w-4 h-4 text-rose-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] text-zinc-600 font-mono truncate">{b.flag_name}</div>
-                    <div className="text-xs font-bold text-rose-200 truncate">{b.username}</div>
-                  </div>
-                </div>
-              ))}
+              <button onClick={load} style={{ padding:10, borderRadius:8, background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s" }}
+                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.2)"}
+                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.1)"}>
+                <RefreshCw style={{ width:18, height:18, color:"#fff", animation: loading?"spin 1s linear infinite":"none" }} />
+              </button>
             </div>
-          </section>
-        )}
+          </div>
 
-      </main>
+          {/* Podium */}
+          {!loading && scores.length >= 1 && (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1.3fr 1fr", gap:12, maxWidth:600, margin:"0 auto 24px", alignItems:"flex-end" }}>
+              {podiumOrder.map((s, i) => {
+                const isFirst = s?.username === scores[0]?.username;
+                const isMe = s?.username === me;
+                const heights = [140, 180, 110];
+                return (
+                  <div key={s.username} style={{ display:"flex", flexDirection:"column", alignItems:"center" }}>
+                    <div style={{ fontSize:28, marginBottom:8 }}>{MEDAL[i]}</div>
+                    <div style={{ width:"100%", height:heights[i], background:"#fff", borderRadius:"10px 10px 0 0", border:"1px solid var(--cc-border)", borderTop:`4px solid ${MEDAL_COLOR[i]}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"12px 8px", boxShadow: isFirst?"0 4px 20px rgba(245,130,10,0.2)":"0 2px 8px rgba(0,0,0,0.05)" }}>
+                      <span style={{ fontWeight:800, color:"var(--cc-navy)", fontSize:14, textAlign:"center", wordBreak:"break-word" }}>{s.username}</span>
+                      <span style={{ fontSize:22, fontWeight:900, fontFamily:"'DM Mono',monospace", color:"var(--cc-orange)", lineHeight:1.2 }}>{s.total_points}</span>
+                      <div style={{ fontSize:10, color:"var(--cc-text-muted)", fontWeight:600 }}>{s.flags_captured} flags</div>
+                      {isMe && <div style={{ marginTop:4, fontSize:9, fontWeight:800, background:"var(--cc-orange)", color:"#fff", padding:"1px 8px", borderRadius:20 }}>YOU</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Main Table */}
+          <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden", marginBottom:20 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead>
+                <tr style={{ background:"var(--cc-navy)" }}>
+                  {["Rank","Participant","Flags Captured","Total Points","Last Submission"].map(h=>(
+                    <th key={h} style={{ padding:"10px 18px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {scores.map((s, i) => (
+                  <tr key={s.username} style={{ background: s.username===me ? "rgba(245,130,10,0.06)" : i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)", transition:"background 0.15s" }}
+                    onMouseEnter={e=>{ if(s.username!==me)(e.currentTarget as HTMLElement).style.background="#f0f4ff" }}
+                    onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.background = s.username===me?"rgba(245,130,10,0.06)":i%2===0?"#fff":"#f8f9fa" }}>
+                    <td style={{ padding:"12px 18px", fontFamily:"'DM Mono',monospace", fontWeight:700, color: i<3?"var(--cc-orange)":"var(--cc-text-muted)", fontSize:13 }}>
+                      {i<3 ? ["🥈","👑","🥉"][i] : null} {String(i+1).padStart(2,"0")}
+                    </td>
+                    <td style={{ padding:"12px 18px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ width:8, height:8, borderRadius:"50%", background: s.username===me?"var(--cc-orange)":"var(--cc-border)", display:"inline-block", flexShrink:0 }}/>
+                        <span style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)" }}>{s.username}</span>
+                        {s.username===me && <span style={{ fontSize:9, fontWeight:800, background:"var(--cc-orange)", color:"#fff", padding:"1px 6px", borderRadius:20 }}>YOU</span>}
+                      </div>
+                    </td>
+                    <td style={{ padding:"12px 18px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:60, height:6, background:"#e5e7eb", borderRadius:3, overflow:"hidden" }}>
+                          <div style={{ height:"100%", background:"var(--cc-orange)", width:`${(s.flags_captured/(totalFlags||1))*100}%`, borderRadius:3 }}/>
+                        </div>
+                        <span style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", fontWeight:600 }}>{s.flags_captured}/{totalFlags}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding:"12px 18px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                        <Target style={{ width:12, height:12, color:"var(--cc-text-muted)" }} />
+                        <span style={{ fontSize:14, fontWeight:900, color:"var(--cc-orange)", fontFamily:"'DM Mono',monospace" }}>{s.total_points}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding:"12px 18px", fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>
+                      {new Date(s.last_submission).toLocaleTimeString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* First Blood */}
+          {bloods.length > 0 && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", borderLeft:"4px solid var(--cc-orange)", padding:20, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <h3 style={{ fontSize:11, fontWeight:800, color:"var(--cc-orange)", textTransform:"uppercase", letterSpacing:2, margin:"0 0 16px", display:"flex", alignItems:"center", gap:6 }}>
+                <Swords style={{ width:14, height:14 }} /> ⚔ First Blood
+              </h3>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:10 }}>
+                {bloods.map(b => (
+                  <div key={b.flag_name} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", borderRadius:8, background:"rgba(245,130,10,0.05)", border:"1px solid rgba(245,130,10,0.15)", transition:"border-color 0.2s" }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.borderColor="var(--cc-orange)"}
+                    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.borderColor="rgba(245,130,10,0.15)"}>
+                    <div style={{ padding:6, background:"rgba(245,130,10,0.1)", borderRadius:6 }}>
+                      <Flame style={{ width:14, height:14, color:"var(--cc-orange)" }} />
+                    </div>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{b.flag_name}</div>
+                      <div style={{ fontSize:12, fontWeight:800, color:"var(--cc-navy)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{b.username}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

@@ -3,16 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Flag, Trophy, Activity, CheckCircle2, XCircle, Zap, Clock, History } from "lucide-react";
+import { Flag, Trophy, Activity, CheckCircle2, XCircle, Zap, Clock } from "lucide-react";
 
 interface Submission { flag_name: string; correct: number; points: number; submitted_at: string; }
 interface Result { correct: boolean; message: string; points?: number; bonus?: number; total?: number; first_blood?: boolean; difficulty?: string; flag_name?: string; alreadyScored?: boolean; }
 
-const DIFFICULTY_META: Record<string, { color: string; border: string; bg: string; pts: number }> = {
-  easy:   { color: "text-emerald-400", border: "border-emerald-500/30", bg: "bg-emerald-500/5", pts: 50 },
-  medium: { color: "text-yellow-400",  border: "border-yellow-500/30",  bg: "bg-yellow-500/5",  pts: 100 },
-  hard:   { color: "text-rose-400",    border: "border-rose-500/30",    bg: "bg-rose-500/5",    pts: 150 },
-  bonus:  { color: "text-blue-400",    border: "border-blue-500/30",    bg: "bg-blue-500/5",    pts: 75 },
+const DIFFICULTY_META: Record<string, { color: string; border: string; bg: string; pts: number; label: string }> = {
+  easy:   { color:"#16a34a", border:"rgba(22,163,74,0.3)",   bg:"rgba(22,163,74,0.07)",   pts:50,  label:"Easy"   },
+  medium: { color:"#d97706", border:"rgba(202,138,4,0.3)",   bg:"rgba(202,138,4,0.07)",   pts:100, label:"Medium" },
+  hard:   { color:"#dc2626", border:"rgba(220,38,38,0.3)",   bg:"rgba(220,38,38,0.07)",   pts:150, label:"Hard"   },
+  bonus:  { color:"#1a3c6e", border:"rgba(26,60,110,0.3)",   bg:"rgba(26,60,110,0.07)",   pts:75,  label:"Bonus"  },
 };
 
 export default function SubmitPage() {
@@ -24,9 +24,9 @@ export default function SubmitPage() {
   const [subLoading, setSubLoad] = useState(true);
 
   const loadSubs = useCallback(() => {
-    fetch("/api/submit").then(r => r.json()).then(d => { 
-      setSubs(d.submissions || []); 
-      setSubLoad(false); 
+    fetch("/api/submit").then(r => r.json()).then(d => {
+      setSubs(d.submissions || []);
+      setSubLoad(false);
     });
   }, []);
 
@@ -57,142 +57,139 @@ export default function SubmitPage() {
   const totalFlags = 4;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-zinc-300 selection:bg-emerald-500/30">
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
-      
-      <main className="max-w-4xl mx-auto px-6 py-12 space-y-10">
-        
-        {/* Header Area */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-black text-white tracking-tighter flex items-center gap-3">
-              <Flag className="w-8 h-8 text-emerald-500" /> SUBMIT_FLAG
-            </h1>
-            <p className="text-zinc-500 text-sm">
-              Standard format: <code className="text-emerald-500 font-mono bg-emerald-500/10 px-2 py-0.5 rounded">BREACH&#123;...&#125;</code>
-            </p>
-          </div>
-          
-          {/* Quick Stats Grid */}
-          <div className="flex gap-4">
-            {[
-              { icon: Trophy, val: totalPts, label: "Points", color: "text-yellow-500" },
-              { icon: Activity, val: `${correct.length}/${totalFlags}`, label: "Captured", color: "text-emerald-500" },
-            ].map((stat, i) => (
-              <div key={i} className="bg-zinc-900/50 border border-white/5 rounded-xl px-5 py-3 min-w-[120px] text-center">
-                <div className={`text-xl font-black ${stat.color} flex items-center justify-center gap-2`}>
-                   <stat.icon className="w-4 h-4" /> {stat.val}
-                </div>
-                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:860 }}>
 
-        {/* Challenge Map / Difficulty Progress */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(DIFFICULTY_META).map(([diff, meta]) => {
-            const solved = correct.find(s => s.flag_name?.toLowerCase().includes(diff));
-            return (
-              <div key={diff} className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${solved ? `${meta.bg} ${meta.border}` : 'bg-zinc-900/20 border-white/5 opacity-40'}`}>
-                <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${meta.color}`}>
-                  {diff}
-                </div>
-                <div className="text-xl font-bold text-white leading-tight">{meta.pts} <span className="text-[10px] text-zinc-500">PTS</span></div>
-                {solved && <CheckCircle2 className={`absolute bottom-2 right-2 w-5 h-5 ${meta.color} opacity-50`} />}
-              </div>
-            );
-          })}
-        </div>
+          {/* Header */}
+          <div style={{ background:"linear-gradient(135deg,var(--cc-navy) 0%,#2d5f8a 100%)", borderRadius:12, padding:"22px 28px", marginBottom:22, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:14 }}>
+            <div>
+              <h1 style={{ fontSize:20, fontWeight:900, color:"#fff", margin:"0 0 4px", display:"flex", alignItems:"center", gap:8 }}>
+                <Flag style={{ width:20, height:20, color:"var(--cc-orange)" }} /> Submit Flag
+              </h1>
+              <p style={{ fontSize:12, color:"rgba(255,255,255,0.65)", margin:0 }}>Enter your captured flag to claim points</p>
+            </div>
+            <div style={{ display:"flex", gap:12 }}>
+              {[
+                { icon:Trophy,   val:totalPts,                   label:"Points",   color:"var(--cc-orange)" },
+                { icon:Activity, val:`${correct.length}/${totalFlags}`, label:"Captured", color:"#4ade80"          },
+              ].map((stat, i) => {
+                const Icon = stat.icon;
+                return (
+                  <div key={i} style={{ background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:10, padding:"10px 18px", textAlign:"center", minWidth:80 }}>
+                    <div style={{ fontSize:18, fontWeight:900, color:stat.color, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                      <Icon style={{ width:14, height:14 }} /> {stat.val}
+                    </div>
+                    <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.6)", textTransform:"uppercase", letterSpacing:1, marginTop:2 }}>{stat.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-        {/* Input Interface */}
-        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
-          {/* Decorative background pulse */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -mr-32 -mt-32 rounded-full transition-opacity group-focus-within:opacity-100 opacity-50" />
-          
-          <div className="relative z-10 space-y-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={flag}
-                  onChange={e => setFlag(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                  placeholder="Paste flag hash here..."
-                  className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-4 font-mono text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all placeholder:text-zinc-700"
-                />
-              </div>
+          {/* Difficulty Reference Strip */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
+            {Object.entries(DIFFICULTY_META).map(([diff, meta]) => {
+              const solved = correct.find(s => s.flag_name?.toLowerCase().includes(diff));
+              return (
+                <div key={diff} style={{ borderRadius:10, border:`1.5px solid ${meta.border}`, padding:"14px 16px", background: solved?meta.bg:"#fff", opacity: solved?1:0.55, position:"relative", overflow:"hidden", transition:"opacity 0.3s" }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:meta.color, textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>{meta.label}</div>
+                  <div style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", lineHeight:1 }}>{meta.pts} <span style={{ fontSize:10, fontWeight:600, color:"var(--cc-text-muted)" }}>pts</span></div>
+                  {solved && <CheckCircle2 style={{ position:"absolute", bottom:8, right:8, width:18, height:18, color:meta.color, opacity:0.6 }} />}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Input */}
+          <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", padding:24, marginBottom:20, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div style={{ display:"flex", gap:12 }}>
+              <input
+                type="text"
+                value={flag}
+                onChange={e => setFlag(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                placeholder="BREACH{...}"
+                style={{ flex:1, border:"2px solid var(--cc-border)", borderRadius:8, padding:"12px 16px", fontFamily:"'DM Mono',monospace", fontSize:14, color:"var(--cc-orange)", outline:"none", background:"#fafafa", transition:"border-color 0.2s", boxSizing:"border-box" }}
+                onFocus={e=>(e.target.style.borderColor="var(--cc-orange)")}
+                onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}
+              />
               <button
                 onClick={handleSubmit}
                 disabled={loading || !flag.trim()}
-                className="bg-emerald-500 hover:bg-emerald-400 text-black font-black px-8 py-4 rounded-xl transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-2 group/btn"
+                style={{ padding:"12px 28px", background: loading||!flag.trim() ? "#d1d5db" : "var(--cc-orange)", color:"#fff", border:"none", borderRadius:8, fontWeight:900, fontSize:14, cursor: loading||!flag.trim()?"not-allowed":"pointer", display:"flex", alignItems:"center", gap:6, transition:"background 0.2s", whiteSpace:"nowrap" }}
               >
-                {loading ? <Zap className="w-5 h-5 animate-spin" /> : <>EXECUTE <Zap className="w-4 h-4 group-hover/btn:fill-current" /></>}
+                {loading ? <><Zap style={{ width:16, height:16, animation:"spin 0.5s linear infinite" }} /> Checking…</> : <><Zap style={{ width:16, height:16 }} /> Submit Flag</>}
               </button>
             </div>
 
-            {/* Response Banner */}
+            {/* Result Banner */}
             {result && (
-              <div className={`p-5 rounded-xl border animate-in slide-in-from-top-2 duration-300 ${result.correct ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
+              <div style={{ marginTop:16, padding:"14px 18px", borderRadius:8, border:"1.5px solid", background: result.correct?"rgba(22,163,74,0.06)":"rgba(220,38,38,0.06)", borderColor: result.correct?"rgba(22,163,74,0.25)":"rgba(220,38,38,0.25)" }}>
                 {result.first_blood && (
-                  <div className="text-rose-500 font-black text-sm mb-2 flex items-center gap-2 tracking-tighter">
-                    🩸 FIRST BLOOD RECORDED
-                  </div>
+                  <div style={{ fontSize:12, fontWeight:900, color:"#dc2626", marginBottom:6 }}>🩸 FIRST BLOOD RECORDED</div>
                 )}
-                <div className={`flex items-center gap-3 font-bold ${result.correct ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {result.correct ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                <div style={{ display:"flex", alignItems:"center", gap:8, fontWeight:800, color: result.correct?"#16a34a":"#dc2626", fontSize:14 }}>
+                  {result.correct ? <CheckCircle2 style={{ width:18, height:18 }} /> : <XCircle style={{ width:18, height:18 }} />}
                   {result.message}
                 </div>
                 {result.correct && !result.alreadyScored && (
-                  <div className="mt-2 grid grid-cols-3 text-[10px] font-mono text-zinc-500 uppercase tracking-widest border-t border-white/5 pt-2">
+                  <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(0,0,0,0.06)", display:"grid", gridTemplateColumns:"1fr 1fr 1fr", fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1 }}>
                     <span>{result.flag_name}</span>
-                    <span className="text-center">{result.difficulty}</span>
-                    <span className="text-right text-emerald-500">+{result.points} PTS</span>
+                    <span style={{ textAlign:"center" }}>{result.difficulty}</span>
+                    <span style={{ textAlign:"right", color:"var(--cc-orange)", fontWeight:800 }}>+{result.points} pts</span>
                   </div>
                 )}
               </div>
             )}
           </div>
-        </div>
 
-        {/* History Table */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
-            <History className="w-4 h-4" /> RECENT_TRANSMISSIONS
-          </h3>
-          
-          <div className="bg-zinc-900/20 border border-white/5 rounded-xl overflow-hidden backdrop-blur-md">
+          {/* History Table */}
+          <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"12px 18px", borderBottom:"1px solid var(--cc-border)", fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>
+              Submission History
+            </div>
             {subLoading ? (
-               <div className="h-32 flex items-center justify-center"><Activity className="w-6 h-6 text-zinc-800 animate-pulse" /></div>
-            ) : subs.length > 0 ? (
-              <div className="divide-y divide-white/5">
-                {subs.map((s, i) => (
-                  <div key={i} className="grid grid-cols-4 px-6 py-4 items-center hover:bg-white/[0.02] transition-colors">
-                    <div className="font-mono text-xs text-zinc-400 truncate pr-4">{s.flag_name || "???"}</div>
-                    <div>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${s.correct ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-                        {s.correct ? "SUCCESS" : "REJECTED"}
-                      </span>
-                    </div>
-                    <div className={`font-black text-sm ${s.correct ? 'text-emerald-500' : 'text-zinc-700'}`}>
-                      {s.correct ? `+${s.points}` : '0'}
-                    </div>
-                    <div className="text-right text-[10px] text-zinc-600 font-mono flex items-center justify-end gap-1">
-                      <Clock className="w-3 h-3" /> {new Date(s.submitted_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ height:80, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Activity style={{ width:20, height:20, color:"var(--cc-border)", animation:"pulse 1s ease-in-out infinite" }} />
               </div>
+            ) : subs.length > 0 ? (
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ background:"var(--cc-navy)" }}>
+                    {["Flag Name","Status","Points","Time"].map(h=>(
+                      <th key={h} style={{ padding:"9px 18px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {subs.map((s, i) => (
+                    <tr key={i} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
+                      <td style={{ padding:"11px 18px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-navy)" }}>{s.flag_name || "???"}</td>
+                      <td style={{ padding:"11px 18px" }}>
+                        {s.correct
+                          ? <span className="badge badge-green">CORRECT</span>
+                          : <span className="badge badge-red">FAILED</span>
+                        }
+                      </td>
+                      <td style={{ padding:"11px 18px", fontSize:13, fontWeight:800, color: s.correct?"var(--cc-orange)":"var(--cc-text-muted)" }}>{s.correct ? `+${s.points}` : "0"}</td>
+                      <td style={{ padding:"11px 18px", fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", display:"flex", alignItems:"center", gap:4 }}>
+                        <Clock style={{ width:11, height:11 }} /> {new Date(s.submitted_at).toLocaleTimeString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
-              <div className="py-12 text-center text-zinc-600">
-                <Flag className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                <p className="text-sm italic">No data found in transmission history.</p>
+              <div style={{ padding:"40px 0", textAlign:"center", color:"var(--cc-text-muted)", fontSize:13 }}>
+                <Flag style={{ width:28, height:28, margin:"0 auto 10px", opacity:0.25 }} />
+                <p style={{ margin:0 }}>No submissions yet.</p>
               </div>
             )}
           </div>
-        </div>
-
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

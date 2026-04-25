@@ -4,21 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { 
-  User, Mail, Shield, School, Hash, Key, 
-  ChevronLeft, ChevronRight, AlertTriangle, Fingerprint 
-} from "lucide-react";
+import { Mail, Shield, School, Hash, Fingerprint, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface Profile {
   id: number; username: string; email: string; full_name: string;
   class: string; section: string; admission_no: string; role: string;
 }
-
-const ROLE_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
-  admin: { color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/30" },
-  staff: { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
-  student: { color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/30" },
-};
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -53,130 +44,124 @@ export default function ProfilePage() {
   }, [id, router]);
 
   const isOwn = sessionUserId === profile?.id;
-  const currentRole = profile?.role || "student";
-  const theme = ROLE_CONFIG[currentRole] || ROLE_CONFIG.student;
+
+  const roleStyle = (role: string): React.CSSProperties => ({
+    fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1, padding:"3px 10px", borderRadius:20,
+    background: role==="admin" ? "rgba(220,38,38,0.12)" : role==="staff" ? "rgba(202,138,4,0.12)" : "rgba(26,60,110,0.12)",
+    color:      role==="admin" ? "#dc2626"              : role==="staff" ? "#b45309"             : "#1a3c6e",
+    border:     `1px solid ${role==="admin" ? "rgba(220,38,38,0.25)" : role==="staff" ? "rgba(202,138,4,0.25)" : "rgba(26,60,110,0.25)"}`,
+  });
+
+  const avatarColor = (role: string) => role==="admin" ? "#dc2626" : role==="staff" ? "#d97706" : "var(--cc-orange)";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-300">
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
-      
-      <main className="max-w-2xl mx-auto px-6 py-10 space-y-6">
-        
-        {/* Navigation & Breadcrumbs */}
-        <div className="flex items-center justify-between">
-          <nav className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-            <Link href="/search" className="hover:text-emerald-500 transition-colors">Directory</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-zinc-300">User_Record_{id}</span>
-          </nav>
-          
-          {!isOwn && profile && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded text-[10px] font-bold text-rose-500 animate-pulse">
-              <AlertTriangle className="w-3 h-3" /> UNAUTHORIZED_VIEW
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:680 }}>
+
+          {/* Breadcrumbs */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+            <nav style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1 }}>
+              <Link href="/search" style={{ color:"var(--cc-orange)", textDecoration:"none", fontWeight:700 }}>Directory</Link>
+              <ChevronRight style={{ width:12, height:12 }} />
+              <span style={{ color:"var(--cc-navy)", fontWeight:700 }}>User_Record_{id}</span>
+            </nav>
+
+            {!isOwn && profile && (
+              <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 12px", background:"rgba(220,38,38,0.08)", border:"1px solid rgba(220,38,38,0.2)", borderRadius:6, fontSize:10, fontWeight:800, color:"#dc2626" }}>
+                <AlertTriangle style={{ width:12, height:12 }} />
+                UNAUTHORIZED_VIEW
+              </div>
+            )}
+          </div>
+
+          {/* Loading */}
+          {loading && (
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <div style={{ height:120, background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", opacity:0.5, animation:"pulse 1.5s ease-in-out infinite" }}/>
+              <div style={{ height:260, background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", opacity:0.5, animation:"pulse 1.5s ease-in-out infinite" }}/>
             </div>
           )}
-        </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="space-y-4 animate-pulse">
-            <div className="h-32 bg-zinc-900 rounded-2xl border border-white/5" />
-            <div className="h-64 bg-zinc-900 rounded-2xl border border-white/5" />
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-12 text-center space-y-4">
-            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto">
-              <Shield className="w-8 h-8 text-rose-500" />
+          {/* Error */}
+          {error && !loading && (
+            <div style={{ background:"rgba(220,38,38,0.05)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:12, padding:"48px 24px", textAlign:"center" }}>
+              <div style={{ width:60, height:60, background:"rgba(220,38,38,0.1)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+                <Shield style={{ width:28, height:28, color:"#dc2626" }} />
+              </div>
+              <h2 style={{ fontSize:18, fontWeight:800, color:"var(--cc-navy)", margin:"0 0 6px" }}>Null Reference Error</h2>
+              <p style={{ fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", margin:"0 0 12px" }}>Object ID {id} returned 404.</p>
+              <p style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", fontStyle:"italic", margin:0, opacity:0.7 }}>Hint: Try sequential ID enumeration (1-10)...</p>
             </div>
-            <div>
-              <h2 className="text-white font-bold text-lg">Null Reference Error</h2>
-              <p className="text-zinc-500 text-sm font-mono mt-1">Object ID {id} returned 404.</p>
-            </div>
-            <p className="text-xs text-zinc-600 italic font-mono">Hint: Try sequential ID enumeration (1-10)...</p>
-          </div>
-        )}
+          )}
 
-        {profile && !loading && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            
-            {/* Header Card */}
-            <div className="relative overflow-hidden bg-zinc-900 border border-white/5 rounded-2xl p-8">
-              {/* Grid Overlay */}
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                   style={{ backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`, backgroundSize: '24px 24px' }} />
-              
-              <div className="relative flex items-center gap-6">
-                <div className={`w-20 h-20 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${theme.border} ${theme.bg} ${theme.color}`}>
+          {/* Profile Card */}
+          {profile && !loading && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+              {/* Own profile banner */}
+              {isOwn && (
+                <div style={{ background:"rgba(26,60,110,0.06)", border:"1.5px solid rgba(26,60,110,0.2)", borderRadius:8, padding:"10px 16px", fontSize:12, fontWeight:700, color:"var(--cc-navy)" }}>
+                  ✓ This is your profile
+                </div>
+              )}
+
+              {/* Header Card */}
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", padding:"28px 28px", display:"flex", alignItems:"center", gap:22 }}>
+                <div style={{ width:80, height:80, borderRadius:"50%", background: avatarColor(profile.role), display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:28, fontWeight:900, flexShrink:0, boxShadow:"0 4px 16px rgba(245,130,10,0.3)" }}>
                   {profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase()}
                 </div>
-                
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-black text-white tracking-tight">{profile.full_name}</h1>
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${theme.bg} ${theme.color} ${theme.border}`}>
-                      {profile.role}
-                    </span>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4, flexWrap:"wrap" }}>
+                    <h1 style={{ fontSize:22, fontWeight:900, color:"var(--cc-navy)", margin:0 }}>{profile.full_name}</h1>
+                    <span style={roleStyle(profile.role)}>{profile.role}</span>
                   </div>
-                  <p className="text-zinc-500 font-mono text-sm">@{profile.username}</p>
+                  <p style={{ fontSize:13, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", margin:"0 0 4px" }}>@{profile.username}</p>
                 </div>
-
-                <div className="text-right">
-                  <div className="text-2xl font-black text-zinc-800 font-mono leading-none">#{profile.id}</div>
-                  <div className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">Record_Index</div>
+                <div style={{ textAlign:"right", opacity:0.25 }}>
+                  <div style={{ fontSize:28, fontWeight:900, fontFamily:"'DM Mono',monospace", color:"var(--cc-navy)", lineHeight:1 }}>#{profile.id}</div>
+                  <div style={{ fontSize:9, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1 }}>Record_Index</div>
                 </div>
               </div>
-            </div>
 
-            {/* Information Grid */}
-            <div className="bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-              <div className="grid grid-cols-1 divide-y divide-white/5">
+              {/* Info Grid */}
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
                 {[
-                  { label: "Email Address", value: profile.email, icon: Mail },
-                  { label: "Admission Number", value: profile.admission_no, icon: Fingerprint, mono: true },
-                  { label: "Class Designation", value: profile.class || "Not Assigned", icon: School },
-                  { label: "Section", value: profile.section || "N/A", icon: Hash },
-                  { label: "Security Role", value: profile.role, icon: Shield, color: theme.color },
-                ].map((item) => (
-                  <div key={item.label} className="grid grid-cols-3 group hover:bg-white/[0.01] transition-colors">
-                    <div className="col-span-1 p-4 bg-white/[0.02] border-r border-white/5 flex items-center gap-3 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                      <item.icon className="w-3.5 h-3.5 opacity-50" />
-                      {item.label}
+                  { label:"Email Address",    value:profile.email,         icon:Mail,        mono:true  },
+                  { label:"Admission Number", value:profile.admission_no,  icon:Fingerprint, mono:true  },
+                  { label:"Class",            value:profile.class||"N/A",  icon:School,      mono:false },
+                  { label:"Section",          value:profile.section||"N/A",icon:Hash,        mono:false },
+                  { label:"Security Role",    value:profile.role,          icon:Shield,      mono:false, isRole:true },
+                ].map((item, i, arr) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} style={{ display:"grid", gridTemplateColumns:"180px 1fr", borderBottom: i<arr.length-1?"1px solid var(--cc-border)":"none" }}>
+                      <div style={{ padding:"13px 18px", background:"#f8f9fa", borderRight:"1px solid var(--cc-border)", display:"flex", alignItems:"center", gap:8 }}>
+                        <Icon style={{ width:13, height:13, color:"var(--cc-text-muted)", opacity:0.7 }} />
+                        <span style={{ fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1 }}>{item.label}</span>
+                      </div>
+                      <div style={{ padding:"13px 18px", display:"flex", alignItems:"center" }}>
+                        {(item as any).isRole
+                          ? <span style={roleStyle(profile.role)}>{item.value}</span>
+                          : <span style={{ fontSize:13, color:"var(--cc-navy)", fontFamily: item.mono?"'DM Mono',monospace":"inherit", fontWeight: item.mono?500:600 }}>{item.value}</span>
+                        }
+                      </div>
                     </div>
-                    <div className={`col-span-2 p-4 text-sm ${item.mono ? 'font-mono' : ''} ${item.color || 'text-zinc-300'}`}>
-                      {item.value}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            </div>
 
-            {/* IDOR Navigation Controls */}
-            <div className="flex items-center justify-between pt-4">
-              {/* <div className="flex gap-2">
-                <Link 
-                  href={`/profile/${Math.max(1, Number(id) - 1)}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all active:scale-95"
-                >
-                  <ChevronLeft className="w-4 h-4 text-emerald-500" /> PREV
-                </Link>
-                <Link 
-                  href={`/profile/${Number(id) + 1}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all active:scale-95"
-                >
-                  NEXT <ChevronRight className="w-4 h-4 text-emerald-500" />
-                </Link>
-              </div> */}
-              
-              <div className="text-[10px] font-mono text-zinc-600 bg-black px-3 py-1.5 rounded-lg border border-white/5">
-                GET /api/profile/<span className="text-emerald-500">{id}</span>
+              {/* API endpoint display */}
+              <div>
+                <div style={{ display:"inline-block", fontFamily:"'DM Mono',monospace", fontSize:11, background:"var(--cc-navy)", color:"rgba(255,255,255,0.7)", padding:"6px 14px", borderRadius:6 }}>
+                  GET /api/profile/<span style={{ color:"var(--cc-orange)" }}>{id}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
@@ -195,6 +180,3 @@ export default function ProfilePage() {
 // admission_no — a unique identifier useful for social engineering
 
 // For ID 1 specifically, you see admin@campuscare.local + role: admin + ADM001 — enough to target the admin account precisely.
-
-
-

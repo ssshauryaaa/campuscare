@@ -56,110 +56,125 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100 flex flex-col font-sans">
-      {/* Navbar */}
-      <header className="border-b border-white/10 bg-[#0f0f0f]/80 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <Link href="/" className="text-emerald-500 font-bold tracking-tight text-lg flex items-center gap-2">
-          <span className="text-2xl">🏫</span> CampusCare
-        </Link>
-        <div className="text-[10px] uppercase tracking-widest text-gray-500 font-medium">
-          Greenfield International School
-        </div>
-      </header>
+    <div style={{ minHeight:"100vh", display:"flex", background:"var(--cc-bg)" }}>
 
-      {/* Main Content */}
-      <main className={`flex-1 flex items-center justify-center p-6 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        <div className="w-full max-w-[400px]">
-          
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] uppercase tracking-[0.2em] font-bold mb-4">
-              Authorized Personnel Only
-            </span>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
-            <p className="text-gray-400 text-sm">Please enter your credentials to continue.</p>
+      {/* Left — Branding Panel */}
+      <div style={{ flex:"0 0 45%", background:"linear-gradient(160deg,#1a3c6e 0%,#2d5f8a 100%)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"48px 40px", position:"relative", overflow:"hidden" }}>
+        {/* Decorative circles */}
+        <div style={{ position:"absolute", top:-80, right:-80, width:280, height:280, borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", bottom:-60, left:-60, width:220, height:220, borderRadius:"50%", background:"rgba(245,130,10,0.07)", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", top:"40%", left:-30, width:100, height:100, borderRadius:"50%", background:"rgba(255,255,255,0.03)", pointerEvents:"none" }}/>
+
+        <div style={{ position:"relative", textAlign:"center", maxWidth:320 }}>
+          {/* Logo */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:40 }}>
+            <div style={{ width:48, height:48, borderRadius:"50%", background:"var(--cc-orange)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:22 }}>C</div>
+            <div style={{ textAlign:"left" }}>
+              <div style={{ fontWeight:900, color:"#fff", fontSize:20, lineHeight:1.1 }}>CampusCare</div>
+              <div style={{ fontSize:11, color:"var(--cc-orange)", fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" }}>by Entab</div>
+            </div>
           </div>
 
-          {/* Form Card */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-8 shadow-2xl shadow-black/50">
-            <div className="space-y-6">
-              
-              {/* Username */}
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Username</label>
-                <input
-                  type="text"
-                  value={form.username}
-                  onChange={e => setForm({ ...form, username: e.target.value })}
-                  placeholder="admin"
-                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm font-mono focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none"
-                />
-              </div>
+          <div style={{ width:60, height:3, background:"var(--cc-orange)", borderRadius:2, margin:"0 auto 28px" }}/>
 
-              {/* Password */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
-                  <button 
-                    onClick={() => setShowPass(!showPass)}
-                    className="text-[10px] font-mono text-emerald-500 hover:text-emerald-400 transition-colors uppercase tracking-wider"
-                  >
-                    {showPass ? "Hide" : "Show"}
-                  </button>
-                </div>
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm font-mono focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none"
-                />
-              </div>
+          <h2 style={{ fontSize:22, fontWeight:800, color:"#fff", margin:"0 0 10px", lineHeight:1.3 }}>
+            Greenfield International School
+          </h2>
+          <p style={{ fontSize:13, color:"rgba(255,255,255,0.65)", margin:"0 0 40px", lineHeight:1.6 }}>
+            Secure student portal. Access your academic dashboard, notices, assignments and results.
+          </p>
 
-              {/* Error Display */}
-              {error && (
-                <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
-                  <p className="text-red-400 text-[12px] leading-relaxed font-mono whitespace-pre-wrap break-all">
-                    <span className="font-bold">Error:</span> {error}
-                  </p>
-                </div>
-              )}
+          {/* Geometric pattern */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:6, opacity:0.15 }}>
+            {Array.from({length:25}).map((_,i)=>(
+              <div key={i} style={{ width:"100%", paddingBottom:"100%", borderRadius:3, background: i%3===0 ? "var(--cc-orange)" : "#fff" }}/>
+            ))}
+          </div>
 
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-900/50 disabled:cursor-not-allowed text-black font-bold py-3.5 rounded-lg text-sm transition-all transform active:scale-[0.98]"
-              >
-                {loading ? "Authenticating..." : "Sign In"}
+          <div style={{ marginTop:40, fontSize:11, color:"rgba(255,255,255,0.4)", fontWeight:600, textTransform:"uppercase", letterSpacing:2 }}>
+            Academic Year 2025–26
+          </div>
+        </div>
+      </div>
+
+      {/* Right — Form Panel */}
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 32px", background:"#fff" }}>
+        <div style={{ width:"100%", maxWidth:420, opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(12px)", transition:"all 0.5s" }}>
+
+          {/* Header */}
+          <div style={{ marginBottom:32 }}>
+            <h1 style={{ fontSize:26, fontWeight:900, color:"var(--cc-navy)", margin:"0 0 6px" }}>Welcome Back</h1>
+            <p style={{ fontSize:13, color:"var(--cc-text-muted)", margin:0 }}>Sign in to your CampusCare account</p>
+          </div>
+
+          {/* Username */}
+          <div style={{ marginBottom:18 }}>
+            <label style={{ display:"block", fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Username</label>
+            <input
+              type="text"
+              value={form.username}
+              onChange={e => setForm({ ...form, username: e.target.value })}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              placeholder="Enter your username"
+              style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"11px 14px", fontSize:14, fontFamily:"'DM Mono',monospace", color:"var(--cc-text)", outline:"none", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
+              onFocus={e => (e.target.style.borderColor = "var(--cc-navy)")}
+              onBlur={e => (e.target.style.borderColor = "var(--cc-border)")}
+            />
+          </div>
+
+          {/* Password */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+              <label style={{ fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5 }}>Password</label>
+              <button onClick={() => setShowPass(!showPass)} style={{ fontSize:10, fontWeight:700, color:"var(--cc-orange)", background:"none", border:"none", cursor:"pointer", textTransform:"uppercase", letterSpacing:1 }}>
+                {showPass ? "Hide" : "Show"}
               </button>
             </div>
+            <input
+              type={showPass ? "text" : "password"}
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              placeholder="••••••••"
+              style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"11px 14px", fontSize:14, fontFamily:"'DM Mono',monospace", color:"var(--cc-text)", outline:"none", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
+              onFocus={e => (e.target.style.borderColor = "var(--cc-navy)")}
+              onBlur={e => (e.target.style.borderColor = "var(--cc-border)")}
+            />
           </div>
 
-          {/* Secondary Actions */}
-          <div className="mt-8 flex flex-col gap-4">
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>New student? <Link href="/register" className="text-emerald-500 hover:underline">Create account</Link></span>
-              <span className="hover:text-gray-300 cursor-help">Help & Support</span>
-            </div>
-
-            {/* VULNERABILITY: Dev Mode Hint */}
-            <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl">
-              <p className="text-[10px] font-mono text-amber-500/80 leading-relaxed">
-                <span className="font-bold uppercase">⚠ System Message:</span> NODE_ENV=development. System logs and verbose error tracing are currently exposed at <Link href="/api/config" className="underline hover:text-amber-400">/api/config</Link>.
+          {/* VULNERABILITY: Error Display — leaks SQL query via data.query */}
+          {error && (
+            <div style={{ background:"rgba(220,38,38,0.06)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:8, padding:"12px 16px", marginBottom:18 }}>
+              <p className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:12, color:"#dc2626", lineHeight:1.6, margin:0 }}>
+                <span style={{ fontWeight:800 }}>Error:</span> {error}
               </p>
             </div>
+          )}
+
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{ width:"100%", background: loading ? "#ccc" : "var(--cc-orange)", color:"#fff", border:"none", borderRadius:8, padding:"13px 0", fontSize:15, fontWeight:900, cursor: loading ? "not-allowed" : "pointer", letterSpacing:0.3, transition:"background 0.2s", marginBottom:20 }}
+          >
+            {loading ? "Signing in…" : "Sign In →"}
+          </button>
+
+          {/* Register link */}
+          <div style={{ textAlign:"center", marginBottom:18 }}>
+            <span style={{ fontSize:13, color:"var(--cc-text-muted)" }}>New student? </span>
+            <Link href="/register" style={{ fontSize:13, fontWeight:700, color:"var(--cc-orange)", textDecoration:"none" }}>Register here</Link>
+          </div>
+
+          {/* VULNERABILITY: Dev Mode Hint */}
+          <div style={{ padding:"12px 16px", background:"rgba(245,158,11,0.06)", border:"1.5px solid rgba(245,158,11,0.2)", borderRadius:8 }}>
+            <p style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:"rgba(180,83,9,0.85)", lineHeight:1.6, margin:0 }}>
+              <span style={{ fontWeight:800, textTransform:"uppercase" }}>⚠ System Message:</span> NODE_ENV=development. System logs and verbose error tracing are currently exposed at{" "}
+              <Link href="/api/config" style={{ textDecoration:"underline", color:"rgba(180,83,9,0.85)" }}>/api/config</Link>.
+            </p>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/5 px-8 py-4 flex justify-between items-center text-[10px] text-gray-600 font-mono tracking-tight">
-        <div>© 2024 CAMPUSCARE v2.3.1-STABLE</div>
-        <div className="flex gap-4">
-          <span>STATUS: <span className="text-emerald-500">ONLINE</span></span>
-          <span>ENV: <span className="text-amber-500">DEV_MODE</span></span>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

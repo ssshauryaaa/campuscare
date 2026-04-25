@@ -1,26 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=DM+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cc-navy:        #1a3c6e;
+  --cc-navy-dark:   #003366;
+  --cc-navy-light:  #2d5f8a;
+  --cc-orange:      #f5820a;
+  --cc-orange-light:#fef3e2;
+  --cc-bg:          #f5f7fa;
+  --cc-white:       #ffffff;
+  --cc-border:      #e2e8f0;
+  --cc-text:        #374151;
+  --cc-text-muted:  #6b7280;
+  --cc-green:       #16a34a;
+  --cc-red:         #dc2626;
+
+  /* Legacy vars for admin/resources pages that still use var() */
+  --background: #f5f7fa;
+  --foreground: #374151;
+  --surface:    #ffffff;
+  --border:     #e2e8f0;
+  --muted:      #6b7280;
+  --accent:     #f5820a;
+  --text:       #374151;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cc-navy:   #1a3c6e;
+  --color-cc-orange: #f5820a;
+  --color-cc-bg:     #f5f7fa;
+  --font-sans: 'Nunito', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Nunito', sans-serif;
+  background: var(--cc-bg);
+  color: var(--cc-text);
+  min-height: 100%;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
+
+code, pre, .font-mono {
+  font-family: 'DM Mono', monospace;
+}
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ERP table stripes */
+.erp-row-even { background: #ffffff; }
+.erp-row-odd  { background: #f8f9fa; }
+
+/* Sidebar nav active state */
+.sidebar-link-active {
+  border-left: 3px solid var(--cc-orange);
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+}
+
+/* Status badge base */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-green  { background: rgba(22,163,74,0.12);  color: #16a34a; border: 1px solid rgba(22,163,74,0.25); }
+.badge-red    { background: rgba(220,38,38,0.12);  color: #dc2626; border: 1px solid rgba(220,38,38,0.25); }
+.badge-yellow { background: rgba(202,138,4,0.12);  color: #b45309; border: 1px solid rgba(202,138,4,0.25); }
+.badge-blue   { background: rgba(26,60,110,0.12);  color: #1a3c6e; border: 1px solid rgba(26,60,110,0.25); }
+.badge-orange { background: rgba(245,130,10,0.12); color: #f5820a; border: 1px solid rgba(245,130,10,0.25); }

@@ -2,42 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { ShieldAlert, Terminal, CheckCircle2, AlertTriangle, Copy, ExternalLink } from "lucide-react";
+import { ShieldAlert, Terminal, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface Decoded { header: any; payload: any; sig: string; }
 
-/**
- * Modernized JSON syntax highlighter component
- */
-function JsonBlock({ data, title, color = "blue" }: { data: any, title: string, color?: string }) {
-  const colors: Record<string, string> = {
-    blue: "text-blue-400",
-    green: "text-emerald-400",
-    yellow: "text-yellow-400"
-  };
-
+function JsonBlock({ data, title }: { data: any; title: string }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className={`text-[10px] font-bold uppercase tracking-wider ${colors[color]}`}>
-        {title}
-      </div>
-      <pre className="p-4 rounded-lg bg-black/40 border border-white/10 font-mono text-xs leading-relaxed overflow-x-auto">
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      <div style={{ fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5 }}>{title}</div>
+      <pre style={{ padding:14, borderRadius:8, background:"#f5f7fa", border:"1px solid var(--cc-border)", fontFamily:"'DM Mono',monospace", fontSize:11, lineHeight:1.7, overflowX:"auto", margin:0, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>
         {JSON.stringify(data, null, 2).split("\n").map((line, i) => {
           const keyMatch = line.match(/^(\s*)"([^"]+)":/);
           if (keyMatch) {
             return (
-              <span key={i} className="block">
+              <span key={i} style={{ display:"block" }}>
                 {keyMatch[1]}
-                <span className="text-blue-300">"{keyMatch[2]}"</span>
+                <span style={{ color:"var(--cc-navy)", fontWeight:600 }}>"{keyMatch[2]}"</span>
                 {line.slice(keyMatch[0].length)}
               </span>
             );
           }
           const isStr = line.trim().startsWith('"') || line.includes(': "');
           return (
-            <span key={i} className={`block ${isStr ? "text-emerald-400" : "text-yellow-200/70"}`}>
-              {line}
-            </span>
+            <span key={i} style={{ display:"block", color: isStr ? "#16a34a" : "var(--cc-text)" }}>{line}</span>
           );
         })}
       </pre>
@@ -66,7 +53,7 @@ export default function JwtDebugPage() {
     try {
       const p = t.split(".");
       return {
-        header: JSON.parse(atob(p[0].replace(/-/g, "+").replace(/_/g, "/"))),
+        header:  JSON.parse(atob(p[0].replace(/-/g, "+").replace(/_/g, "/"))),
         payload: JSON.parse(atob(p[1].replace(/-/g, "+").replace(/_/g, "/"))),
         sig: p[2] ?? "",
       };
@@ -94,140 +81,147 @@ export default function JwtDebugPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-300 selection:bg-blue-500/30">
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
-      
-      <main className="max-w-5xl mx-auto px-6 py-12 space-y-8">
-        
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                <Terminal className="w-5 h-5 text-yellow-500" />
-              </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">JWT Debugger</h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 border border-zinc-700 text-zinc-400">DEV_ONLY</span>
-            </div>
-            <p className="text-zinc-500 text-sm max-w-md">
-              Internal utility for token inspection and signature validation. 
-              <span className="text-red-400/80 block mt-1 font-medium italic underline underline-offset-4">Warning: Remove from production build.</span>
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:960 }}>
+
+          {/* Warning Banner */}
+          <div style={{ background:"rgba(245,130,10,0.08)", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:10, padding:"12px 18px", marginBottom:22, display:"flex", alignItems:"center", gap:12 }}>
+            <AlertTriangle style={{ width:18, height:18, color:"var(--cc-orange)", flexShrink:0 }} />
+            <p style={{ fontSize:12, fontWeight:700, color:"var(--cc-orange)", margin:0 }}>
+              ⚠ Internal Developer Utility — Remove Before Production Deployment
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-zinc-900/50 p-4 rounded-xl border border-white/5 min-w-[240px]">
-            <div>
-              <p className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Algorithm</p>
-              <p className="font-mono text-yellow-500 font-bold">HS256</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase text-zinc-500 font-bold mb-1">Secret Strength</p>
-              <p className="text-red-500 font-bold flex items-center justify-end gap-1">
-                <ShieldAlert className="w-3 h-3" /> WEAK
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {/* Current Token Section */}
-        {token && decoded && (
-          <section className="bg-zinc-900/40 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
-            <div className="px-6 py-4 bg-white/5 flex justify-between items-center">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                Active Session Token
-              </h2>
-              <code className="text-[10px] text-zinc-500 italic">HS256 Signed</code>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div className="p-4 rounded-lg bg-black/50 border border-white/5 font-mono text-[11px] break-all leading-relaxed tracking-tight group relative">
-                <span className="text-blue-400">{token.split(".")[0]}</span>
-                <span className="text-zinc-600">.</span>
-                <span className="text-emerald-400">{token.split(".")[1]}</span>
-                <span className="text-zinc-600">.</span>
-                <span className="text-rose-400">{token.split(".")[2]}</span>
+          {/* Header */}
+          <div style={{ marginBottom:24, display:"flex", flexDirection:"column" as any, gap:4 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ padding:8, background:"rgba(245,130,10,0.1)", borderRadius:8, border:"1px solid rgba(245,130,10,0.2)" }}>
+                <Terminal style={{ width:18, height:18, color:"var(--cc-orange)" }} />
               </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <JsonBlock data={decoded.header} title="Header" color="blue" />
-                <JsonBlock data={decoded.payload} title="Payload" color="green" />
-              </div>
+              <h1 style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", margin:0 }}>JWT Debugger</h1>
+              <span style={{ padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:800, background:"rgba(220,38,38,0.1)", color:"#dc2626", border:"1px solid rgba(220,38,38,0.2)", textTransform:"uppercase" }}>DEV_ONLY</span>
             </div>
-          </section>
-        )}
-
-        {/* Custom Tester */}
-        <section className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-zinc-900/80 border border-white/10 rounded-2xl p-6 shadow-2xl">
-              <label className="text-[10px] font-bold uppercase text-zinc-500 mb-4 block tracking-widest italic">
-                Input Forged Token
-              </label>
-              <textarea
-                value={custom}
-                onChange={e => handleCustomChange(e.target.value)}
-                rows={4}
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
-                placeholder="Paste JWT here..."
-              />
-              
-              <div className="flex gap-3 mt-6">
-                <button 
-                  onClick={verify}
-                  disabled={verifying || !custom}
-                  className="flex-1 bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50 text-sm flex items-center justify-center gap-2"
-                >
-                  {verifying ? "Verifying..." : <>Verify Integrity <ExternalLink className="w-4 h-4" /></>}
-                </button>
-                <button 
-                  onClick={() => {
-                    document.cookie = `token=${custom}; path=/; max-age=86400`;
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="px-6 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm font-medium"
-                >
-                  {copied ? <CheckCircle2 className="text-emerald-500" /> : "Apply Cookie"}
-                </button>
-              </div>
-
-              {verifyRes && (
-                <div className={`mt-6 p-4 rounded-xl border font-mono text-xs ${verifyRes.valid ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/5 border-rose-500/20 text-rose-400'}`}>
-                  <pre>{JSON.stringify(verifyRes, null, 2)}</pre>
-                </div>
-              )}
-            </div>
+            <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>
+              Internal utility for token inspection and signature validation.{" "}
+              <span style={{ color:"#dc2626", fontWeight:600 }}>Warning: Remove from production build.</span>
+            </p>
           </div>
 
-          {/* Reference Sidebar */}
-          <aside className="space-y-4">
-            <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6">
-              <h3 className="text-rose-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Vector Lab
-              </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-white text-xs font-bold mb-2 underline decoration-rose-500/30">Algorithm Confusion</h4>
-                  <ul className="text-[11px] space-y-2 text-zinc-500 font-mono">
-                    <li>1. alg: "none"</li>
-                    <li>2. role: "admin"</li>
-                    <li>3. Strip signature</li>
-                  </ul>
+          {/* Active Token */}
+          {token && decoded && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", borderTop:"3px solid var(--cc-navy)", marginBottom:22, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ padding:"12px 20px", borderBottom:"1px solid var(--cc-border)", display:"flex", justifyContent:"space-between", alignItems:"center", background:"#f8f9fa" }}>
+                <h2 style={{ fontSize:11, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:2, margin:0, display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--cc-navy)", display:"inline-block", animation:"pulse 2s infinite" }}/>
+                  Active Session Token
+                </h2>
+                <code style={{ fontSize:10, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace" }}>HS256 Signed</code>
+              </div>
+              <div style={{ padding:20 }}>
+                <div style={{ padding:14, borderRadius:8, background:"#f5f7fa", border:"1px solid var(--cc-border)", fontFamily:"'DM Mono',monospace", fontSize:11, wordBreak:"break-all", lineHeight:1.6, marginBottom:18 }}>
+                  <span style={{ color:"#1d4ed8" }}>{token.split(".")[0]}</span>
+                  <span style={{ color:"var(--cc-border)" }}>.</span>
+                  <span style={{ color:"#16a34a" }}>{token.split(".")[1]}</span>
+                  <span style={{ color:"var(--cc-border)" }}>.</span>
+                  <span style={{ color:"#dc2626" }}>{token.split(".")[2]}</span>
                 </div>
-                <div>
-                  <h4 className="text-white text-xs font-bold mb-2 underline decoration-yellow-500/30">Secret Recovery</h4>
-                  <p className="text-[10px] text-zinc-600 mb-2">Crack using RockYou:</p>
-                  <code className="block bg-black p-2 rounded text-[10px] text-yellow-500">
-                    hashcat -m 16500 jwt.txt rockyou.txt
-                  </code>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                  <JsonBlock data={decoded.header}  title="Header"  />
+                  <JsonBlock data={decoded.payload} title="Payload" />
                 </div>
               </div>
             </div>
-          </aside>
-        </section>
-      </main>
+          )}
+
+          {/* Custom Tester + Vector Lab */}
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:20 }}>
+            <div style={{ display:"flex", flexDirection:"column" as any, gap:0 }}>
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", padding:22, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                <label style={{ fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, display:"block", marginBottom:12 }}>
+                  Custom Token Tester
+                </label>
+                <textarea
+                  value={custom}
+                  onChange={e => handleCustomChange(e.target.value)}
+                  rows={4}
+                  placeholder="Paste JWT here..."
+                  style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"11px 14px", fontFamily:"'DM Mono',monospace", fontSize:12, color:"var(--cc-text)", outline:"none", resize:"vertical", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")}
+                  onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}
+                />
+
+                {customDec && (
+                  <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <JsonBlock data={customDec.header}  title="Decoded Header"  />
+                    <JsonBlock data={customDec.payload} title="Decoded Payload" />
+                  </div>
+                )}
+
+                <div style={{ display:"flex", gap:10, marginTop:16 }}>
+                  <button
+                    onClick={verify}
+                    disabled={verifying || !custom}
+                    style={{ flex:1, background: verifying||!custom ? "#d1d5db" : "var(--cc-orange)", color:"#fff", border:"none", borderRadius:8, padding:"11px 0", fontSize:13, fontWeight:800, cursor: verifying||!custom?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, transition:"background 0.2s" }}
+                  >
+                    {verifying ? "Verifying…" : <><span>Verify Integrity</span><ExternalLink style={{ width:14, height:14 }} /></>}
+                  </button>
+                  <button
+                    onClick={() => {
+                      document.cookie = `token=${custom}; path=/; max-age=86400`;
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    style={{ padding:"11px 20px", border:"1.5px solid var(--cc-navy)", borderRadius:8, background:"transparent", color:"var(--cc-navy)", fontSize:13, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}
+                    onMouseEnter={e=>{const t=e.currentTarget as HTMLElement;t.style.background="var(--cc-navy)";t.style.color="#fff"}}
+                    onMouseLeave={e=>{const t=e.currentTarget as HTMLElement;t.style.background="transparent";t.style.color="var(--cc-navy)"}}
+                  >
+                    {copied ? <CheckCircle2 style={{ width:16, height:16, color:"#16a34a" }} /> : "Apply Cookie"}
+                  </button>
+                </div>
+
+                {verifyRes && (
+                  <div style={{ marginTop:16, padding:"12px 16px", borderRadius:8, border:"1.5px solid", fontFamily:"'DM Mono',monospace", fontSize:11, lineHeight:1.6,
+                    background: verifyRes.valid ? "rgba(22,163,74,0.06)"  : "rgba(220,38,38,0.06)",
+                    borderColor: verifyRes.valid ? "rgba(22,163,74,0.25)" : "rgba(220,38,38,0.25)",
+                    color:       verifyRes.valid ? "#16a34a"               : "#dc2626",
+                  }}>
+                    <pre style={{ margin:0, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>{JSON.stringify(verifyRes, null, 2)}</pre>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Vector Lab Sidebar */}
+            <aside>
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", borderLeft:"4px solid var(--cc-orange)", padding:20, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+                <h3 style={{ fontSize:11, fontWeight:800, color:"#dc2626", textTransform:"uppercase", letterSpacing:2, marginBottom:18, display:"flex", alignItems:"center", gap:6 }}>
+                  <AlertTriangle style={{ width:14, height:14 }} /> ⚠ Attack Vectors
+                </h3>
+
+                <div style={{ display:"flex", flexDirection:"column" as any, gap:20 }}>
+                  <div>
+                    <h4 style={{ fontSize:12, fontWeight:800, color:"var(--cc-navy)", marginBottom:8, textDecoration:"underline", textDecorationColor:"rgba(220,38,38,0.3)" }}>Algorithm Confusion</h4>
+                    <ul style={{ fontSize:11, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace", paddingLeft:0, listStyle:"none", margin:0, display:"flex", flexDirection:"column", gap:6 }}>
+                      <li>1. alg: &quot;none&quot;</li>
+                      <li>2. role: &quot;admin&quot;</li>
+                      <li>3. Strip signature</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize:12, fontWeight:800, color:"var(--cc-navy)", marginBottom:8, textDecoration:"underline", textDecorationColor:"rgba(202,138,4,0.3)" }}>Secret Recovery</h4>
+                    <p style={{ fontSize:10, color:"var(--cc-text-muted)", marginBottom:6 }}>Crack using RockYou:</p>
+                    <code style={{ display:"block", background:"var(--cc-navy)", color:"var(--cc-orange)", padding:"8px 12px", borderRadius:6, fontSize:10, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                      hashcat -m 16500 jwt.txt rockyou.txt
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

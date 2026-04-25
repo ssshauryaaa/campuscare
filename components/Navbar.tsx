@@ -3,11 +3,40 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  LayoutDashboard, Bell, Search, BookOpen, Library,
+  Flag, Trophy, KeyRound, ShieldAlert, LogOut,
+  ChevronRight, GraduationCap,
+} from "lucide-react";
 
 interface User { id: number; username: string; role: string; }
 
+const NAV_ITEMS = [
+  { href: "/dashboard",   label: "Dashboard",        icon: LayoutDashboard },
+  { href: "/notices",     label: "Notices",           icon: Bell            },
+  { href: "/search",      label: "Search Directory",  icon: Search          },
+  { href: "/assignments", label: "Assignments",       icon: BookOpen        },
+  { href: "/resources",   label: "Resources",         icon: Library         },
+  { href: "/submit",      label: "Submit Flag",       icon: Flag            },
+  { href: "/leaderboard", label: "Leaderboard",       icon: Trophy          },
+  { href: "/jwt-debug",   label: "JWT Debugger",      icon: KeyRound        },
+];
+
+const PAGE_TITLES: Record<string, string> = {
+  "/":            "Home",
+  "/dashboard":   "Dashboard",
+  "/notices":     "Notice Board",
+  "/search":      "Student Directory",
+  "/assignments": "Assignments",
+  "/resources":   "Resources",
+  "/submit":      "Submit Flag",
+  "/leaderboard": "Leaderboard",
+  "/jwt-debug":   "JWT Debugger",
+  "/admin":       "Admin Console",
+};
+
 export default function Navbar() {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
 
@@ -19,8 +48,8 @@ export default function Navbar() {
       // Classic CTF hint: Client-side JWT decoding via atob
       const payload = JSON.parse(atob(match[1].split(".")[1]));
       setUser(payload);
-    } catch { 
-      setUser(null); 
+    } catch {
+      setUser(null);
     }
   }, [pathname]);
 
@@ -31,101 +60,143 @@ export default function Navbar() {
     router.push("/login");
   };
 
+  // Determine current page title (handles dynamic segments like /profile/[id])
+  const pageTitle =
+    PAGE_TITLES[pathname] ??
+    (pathname.startsWith("/profile") ? "Student Profile" : "CampusCare");
+
+  // Get initials from username
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : "?";
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/60 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
-        
+    <>
+      {/* ─── Left Sidebar ───────────────────────────────────────────────── */}
+      <aside
+        className="fixed inset-y-0 left-0 z-40 flex flex-col"
+        style={{ width: 240, background: "var(--cc-navy)" }}
+      >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-lg group-hover:scale-110 transition-transform">🏫</span>
-          <span className="font-bold text-white tracking-tight">
-            Campus<span className="text-cyan-400">Care</span>
-          </span>
-        </Link>
-
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {user ? (
-            <>
-              <NavGroup links={[
-                { href: "/dashboard", label: "Dashboard" },
-                { href: "/notices", label: "Notices" },
-                { href: "/search", label: "Search" },
-                { href: "/assignments", label: "Assignments" },
-                { href: "/submit", label: "Submit Flag" },
-                { href: "/leaderboard", label: "Leaderboard" },
-                { href: "/jwt-debug", label: "JWT Debug" },
-              ]} currentPath={pathname} />
-
-              {user.role === "admin" && (
-                <NavLink href="/admin" label="Admin" currentPath={pathname} variant="danger" />
-              )}
-            </>
-          ) : (
-            <NavGroup links={[
-              { href: "/notices", label: "Notices" },
-              { href: "/leaderboard", label: "Leaderboard" },
-              { href: "/register", label: "Register" },
-            ]} currentPath={pathname} />
-          )}
+        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-base flex-shrink-0"
+            style={{ background: "var(--cc-orange)", color: "#fff" }}
+          >
+            C
+          </div>
+          <div>
+            <div className="font-black text-white text-sm leading-tight tracking-tight">CampusCare</div>
+            <div className="text-[10px] font-semibold leading-tight" style={{ color: "var(--cc-orange)" }}>by Entab</div>
+          </div>
         </div>
 
-        {/* User Actions */}
-        <div className="flex items-center gap-4">
-          {user ? (
-            <div className="flex items-center gap-3">
-              <Link 
-                href={`/profile/${user.id}`}
-                className="text-[11px] font-mono text-slate-400 bg-white/5 px-2 py-1 rounded border border-white/5 hover:border-cyan-500/50 transition-colors"
+        {/* Nav Items */}
+        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5 px-2">
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all group"
+                style={{
+                  color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
+                  background: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+                  borderLeft: isActive ? "3px solid var(--cc-orange)" : "3px solid transparent",
+                }}
               >
-                {user.username}
+                <Icon
+                  className="w-4 h-4 flex-shrink-0 transition-colors"
+                  style={{ color: isActive ? "var(--cc-orange)" : "rgba(255,255,255,0.5)" }}
+                />
+                <span className="truncate">{label}</span>
               </Link>
-              <button
-                onClick={logout}
-                className="text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-red-500/20 px-3 py-1.5 rounded-lg border border-white/10 transition-all"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <Link 
-              href="/login"
-              className="text-xs font-bold uppercase tracking-wider text-black bg-cyan-400 hover:bg-cyan-300 px-4 py-2 rounded-lg transition-all"
+            );
+          })}
+
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2"
+              style={{
+                color: pathname === "/admin" ? "#fca5a5" : "rgba(252,165,165,0.7)",
+                background: pathname === "/admin" ? "rgba(220,38,38,0.15)" : "transparent",
+                borderLeft: pathname === "/admin" ? "3px solid #dc2626" : "3px solid transparent",
+              }}
             >
-              Login
+              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#fca5a5" }} />
+              <span>Admin Panel</span>
             </Link>
           )}
+        </nav>
+
+        {/* User Section */}
+        {user && (
+          <div className="border-t p-3 space-y-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+            <Link
+              href={`/profile/${user.id}`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group"
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
+                style={{ background: "var(--cc-orange)", color: "#fff" }}
+              >
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white text-xs font-bold truncate">{user.username}</div>
+                <div
+                  className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5"
+                  style={{
+                    background: user.role === "admin" ? "rgba(220,38,38,0.2)" : "rgba(245,130,10,0.2)",
+                    color:      user.role === "admin" ? "#fca5a5" : "var(--cc-orange)",
+                  }}
+                >
+                  {user.role}
+                </div>
+              </div>
+              <ChevronRight className="w-3 h-3 opacity-30 group-hover:opacity-70 transition-opacity" style={{ color: "#fff" }} />
+            </Link>
+
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+              style={{ color: "rgba(255,255,255,0.5)", background: "transparent" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.15)"; (e.currentTarget as HTMLElement).style.color = "#fca5a5"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)"; }}
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
+          </div>
+        )}
+      </aside>
+
+      {/* ─── Top Header Bar ─────────────────────────────────────────────── */}
+      <header
+        className="fixed top-0 right-0 z-30 flex items-center justify-between px-6"
+        style={{
+          left: 240,
+          height: 56,
+          background: "#fff",
+          borderBottom: "1px solid var(--cc-border)",
+        }}
+      >
+        <h2 className="font-bold text-base" style={{ color: "var(--cc-navy)" }}>
+          {pageTitle}
+        </h2>
+        <div className="flex items-center gap-4">
+          <GraduationCap className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
+          <span className="text-sm font-semibold" style={{ color: "var(--cc-text-muted)" }}>
+            Greenfield International School
+          </span>
+          <Bell className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
+          <span className="text-xs font-medium" style={{ color: "var(--cc-text-muted)" }}>
+            {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
         </div>
-      </div>
-    </nav>
-  );
-}
-
-/** * Sub-components for cleaner JSX
- */
-
-function NavGroup({ links, currentPath }: { links: { href: string; label: string }[], currentPath: string }) {
-  return (
-    <div className="flex items-center gap-1">
-      {links.map(link => (
-        <NavLink key={link.href} {...link} currentPath={currentPath} />
-      ))}
-    </div>
-  );
-}
-
-function NavLink({ href, label, currentPath, variant }: { href: string; label: string; currentPath: string; variant?: "danger" }) {
-  const isActive = currentPath === href;
-  
-  const baseStyles = "px-3 py-1.5 text-[13px] font-medium transition-all rounded-md whitespace-nowrap";
-  const activeStyles = isActive 
-    ? "text-cyan-400 bg-cyan-400/10" 
-    : "text-slate-400 hover:text-slate-200 hover:bg-white/5";
-  const dangerStyles = variant === "danger" ? "text-red-400 hover:bg-red-500/10" : "";
-
-  return (
-    <Link href={href} className={`${baseStyles} ${activeStyles} ${dangerStyles}`}>
-      {label}
-    </Link>
+      </header>
+    </>
   );
 }

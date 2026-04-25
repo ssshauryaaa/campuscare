@@ -63,147 +63,143 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-slate-200">
+    <div style={{ background:"var(--cc-bg)", minHeight:"100vh" }}>
       <Navbar />
+      <div style={{ marginLeft:240, paddingTop:56 }}>
+        <main style={{ padding:"28px 28px", maxWidth:960 }}>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        {/* Page Header */}
-        <header className="mb-10">
-          <h1 className="text-2xl font-bold text-white tracking-tight">Student Directory</h1>
-          <p className="text-slate-500 text-sm mt-1">Registry of all currently enrolled personnel.</p>
-        </header>
-
-        {/* Search Controls */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-sm mb-8">
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1 group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors">🔍</span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSearch()}
-                placeholder="Query name or ID..."
-                className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-12 pr-12 text-sm font-mono text-white focus:outline-none focus:border-cyan-500/50 transition-all"
-              />
-              {query && (
-                <button onClick={handleClear} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">×</button>
-              )}
-            </div>
-            <button
-              onClick={() => handleSearch()}
-              disabled={loading}
-              className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 text-black font-bold px-8 py-3 rounded-xl transition-all text-sm uppercase tracking-widest whitespace-nowrap"
-            >
-              {loading ? "Searching..." : "Execute Search"}
-            </button>
+          {/* Header */}
+          <div style={{ marginBottom:20 }}>
+            <h1 style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", margin:"0 0 3px" }}>Student Directory</h1>
+            <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Registry of enrolled students</p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Filter by Class:</span>
-            <div className="flex gap-2">
-              {CLASS_FILTERS.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setClass(c)}
-                  className={`px-3 py-1 rounded-md text-[11px] font-mono border transition-all ${
-                    classFilter === c 
-                      ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' 
-                      : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/20'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Database Error (The Clue) */}
-        {error && (
-          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mb-8">
-            <div className="flex gap-3 items-start">
-              <span className="text-red-500">⚠</span>
-              <pre className="text-[11px] font-mono text-red-400 whitespace-pre-wrap break-all leading-relaxed">
-                <div className="font-bold uppercase mb-1">Database Exception Report</div>
-                {error}
-              </pre>
-            </div>
-          </div>
-        )}
-
-        {/* Results Area */}
-        <div className="space-y-4">
-          {loading ? (
-            <div className="space-y-3 opacity-40">
-              {[1, 2, 3].map(i => <div key={i} className="h-16 bg-white/5 border border-white/10 rounded-xl animate-pulse" />)}
-            </div>
-          ) : results !== null && results.length > 0 ? (
-            <>
-              <div className="flex justify-between items-center px-2">
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">
-                  Found <span className="text-cyan-400">{results.length}</span> Records for "{searched}"
-                </span>
+          {/* Search Card */}
+          <div style={{ background:"#fff", borderRadius:12, padding:22, marginBottom:18, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div style={{ display:"flex", gap:12, marginBottom:14 }}>
+              <div style={{ flex:1, position:"relative" }}>
+                <span style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)", fontSize:16, color:"var(--cc-text-muted)", pointerEvents:"none" }}>🔍</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSearch()}
+                  placeholder="Search by student name or ID..."
+                  style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"10px 38px 10px 40px", fontSize:13, fontFamily:"'DM Mono',monospace", color:"var(--cc-text)", outline:"none", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
+                  onFocus={e=>(e.target.style.borderColor="var(--cc-orange)")}
+                  onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}
+                />
+                {query && (
+                  <button onClick={handleClear} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", fontSize:18, color:"var(--cc-text-muted)", cursor:"pointer" }}>×</button>
+                )}
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-white/[0.02] border-b border-white/10 text-[10px] uppercase font-bold text-slate-500">
-                    <tr>
-                      <th className="px-6 py-4">Ref_ID</th>
-                      <th className="px-6 py-4">Student Name</th>
-                      <th className="px-6 py-4 text-center">Class/Sec</th>
-                      <th className="px-6 py-4 text-right">Adm_Num</th>
-                      <th className="px-6 py-4 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {results.map((s) => (
-                      <tr key={s.id} className="group hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{s.id}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <InitialAvatar name={s.full_name} />
-                            <span className="font-semibold text-slate-200">{s.full_name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center font-mono text-xs text-slate-400">
-                          {s.class}-{s.section}
-                        </td>
-                        <td className="px-6 py-4 text-right font-mono text-xs text-slate-400">
-                          {s.admission_no}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <Link href={`/profile/${s.id}`} className="text-slate-600 hover:text-cyan-400 transition-colors">
-                            →
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : results !== null ? (
-            <div className="text-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-              <div className="text-4xl mb-4 grayscale">📂</div>
-              <p className="text-slate-400 font-medium">No records matching the query were retrieved.</p>
+              <button
+                onClick={() => handleSearch()}
+                disabled={loading}
+                style={{ padding:"10px 28px", background: loading?"#d1d5db":"var(--cc-orange)", color:"#fff", border:"none", borderRadius:8, fontWeight:800, fontSize:13, cursor: loading?"not-allowed":"pointer", letterSpacing:0.5, transition:"background 0.2s", whiteSpace:"nowrap" }}
+              >
+                {loading ? "Searching…" : "Search"}
+              </button>
             </div>
-          ) : (
-            <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
-              <p className="text-slate-500 text-sm italic font-mono">Query the database to populate this view...</p>
+
+            {/* Class Filters */}
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5 }}>Filter by Class:</span>
+              <div style={{ display:"flex", gap:6 }}>
+                {CLASS_FILTERS.map(c => (
+                  <button key={c} onClick={() => setClass(c)}
+                    style={{ padding:"4px 12px", borderRadius:20, fontSize:11, fontWeight:700, border:"1.5px solid", cursor:"pointer", transition:"all 0.15s",
+                      background: classFilter===c ? "var(--cc-orange)" : "transparent",
+                      borderColor: classFilter===c ? "var(--cc-orange)" : "var(--cc-border)",
+                      color: classFilter===c ? "#fff" : "var(--cc-text-muted)",
+                    }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* VULNERABILITY: Error display leaks raw SQL query via [QUERY_LOG] */}
+          {error && (
+            <div style={{ background:"rgba(220,38,38,0.05)", border:"1.5px solid rgba(220,38,38,0.2)", borderRadius:10, padding:"14px 18px", marginBottom:18 }}>
+              <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <span style={{ color:"#dc2626", fontSize:16, flexShrink:0 }}>⚠</span>
+                <div>
+                  <div style={{ fontSize:11, fontWeight:800, color:"#dc2626", textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>Database Exception Report</div>
+                  <pre className="font-mono whitespace-pre-wrap break-all" style={{ fontSize:11, color:"#dc2626", lineHeight:1.6, margin:0 }}>{error}</pre>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* System Hint (IDOR nudge) */}
-        <footer className="mt-12 text-center">
-          <p className="text-[10px] text-slate-600 font-mono flex items-center justify-center gap-2">
-            <span className="text-cyan-900">SYSTEM_ID_INDEX:</span> 
-            Access restricted to pattern <span className="text-cyan-700 underline decoration-cyan-900">/profile/[id]</span>
-          </p>
-        </footer>
-      </main>
+          {/* Results */}
+          <div>
+            {loading ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:8, opacity:0.5 }}>
+                {[1,2,3].map(i=><div key={i} style={{ height:56, background:"#fff", borderRadius:8, border:"1px solid var(--cc-border)", animation:"pulse 1.5s ease-in-out infinite" }}/>)}
+              </div>
+            ) : results !== null && results.length > 0 ? (
+              <>
+                <div style={{ marginBottom:10, fontSize:11, color:"var(--cc-text-muted)", fontWeight:600 }}>
+                  Found <span style={{ color:"var(--cc-orange)", fontWeight:800 }}>{results.length}</span> records for &ldquo;{searched}&rdquo;
+                </div>
+                <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                    <thead>
+                      <tr style={{ background:"var(--cc-navy)" }}>
+                        {["ID","Student Name","Class / Sec","Admission No",""].map(h=>(
+                          <th key={h} style={{ padding:"10px 16px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((s, i) => (
+                        <tr key={s.id} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}
+                          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="#f0f4ff"}
+                          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background=i%2===0?"#fff":"#f8f9fa"}>
+                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>{s.id}</td>
+                          <td style={{ padding:"11px 16px" }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                              <InitialAvatar name={s.full_name} />
+                              <span style={{ fontSize:13, fontWeight:700, color:"var(--cc-navy)" }}>{s.full_name}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>
+                            <span style={{ background:"rgba(26,60,110,0.08)", color:"var(--cc-navy)", padding:"2px 8px", borderRadius:4, fontSize:11, fontWeight:700 }}>{s.class}-{s.section}</span>
+                          </td>
+                          <td style={{ padding:"11px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)" }}>{s.admission_no}</td>
+                          <td style={{ padding:"11px 16px", textAlign:"center" }}>
+                            <Link href={`/profile/${s.id}`} style={{ fontSize:16, color:"var(--cc-orange)", textDecoration:"none", fontWeight:800 }}>→</Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : results !== null ? (
+              <div style={{ textAlign:"center", padding:"60px 0", background:"#fff", borderRadius:12, border:"2px dashed var(--cc-border)" }}>
+                <div style={{ fontSize:36, marginBottom:10, opacity:0.4 }}>📂</div>
+                <p style={{ color:"var(--cc-text-muted)", fontSize:13, margin:0 }}>No students found matching your query.</p>
+              </div>
+            ) : (
+              <div style={{ textAlign:"center", padding:"60px 0", border:"2px dashed var(--cc-border)", borderRadius:12 }}>
+                <p style={{ fontSize:13, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace", fontStyle:"italic", margin:0 }}>Enter a name or ID to search the student registry…</p>
+              </div>
+            )}
+          </div>
+
+          {/* System Hint (IDOR nudge) */}
+          <footer style={{ marginTop:24, textAlign:"center" }}>
+            <p style={{ fontSize:10, fontFamily:"'DM Mono',monospace", color:"var(--cc-text-muted)", opacity:0.6, display:"flex", alignItems:"center", justifyContent:"center", gap:6, margin:0 }}>
+              <span style={{ color:"#93c5fd" }}>SYSTEM_ID_INDEX:</span>
+              Access restricted to pattern <span style={{ color:"#93c5fd", textDecoration:"underline", textDecorationColor:"rgba(147,197,253,0.3)" }}>/profile/[id]</span>
+            </p>
+          </footer>
+        </main>
+      </div>
     </div>
   );
 }
@@ -213,12 +209,14 @@ function InitialAvatar({ name }: { name: string }) {
   const hue = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
 
   return (
-    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold font-mono border"
-         style={{ 
-           background: `hsl(${hue}, 40%, 10%)`, 
-           borderColor: `hsl(${hue}, 40%, 25%)`,
-           color: `hsl(${hue}, 50%, 60%)` 
-         }}>
+    <div style={{
+      width:32, height:32, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:11, fontWeight:800, fontFamily:"'DM Mono',monospace", border:"1.5px solid",
+      background: `hsl(${hue},50%,92%)`,
+      borderColor: `hsl(${hue},40%,75%)`,
+      color: `hsl(${hue},50%,35%)`,
+      flexShrink:0,
+    }}>
       {initials}
     </div>
   );
@@ -258,7 +256,7 @@ function InitialAvatar({ name }: { name: string }) {
 //  Dump users (including admin):
 // %' UNION SELECT username, password, role, email, admission_no FROM users--
 
-//  You’ll see:
+//  You'll see:
 
 // usernames
 // plaintext passwords
