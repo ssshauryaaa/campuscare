@@ -11,8 +11,6 @@ interface Notice { id: number; title: string; author: string; created_at: string
 interface Sub { correct: number; points: number; flag_name: string; submitted_at: string; }
 
 const QUICK_LINKS = [
-  { href: "/submit",      icon: Flag,    label: "Submit Flag",  color: "#16a34a" },
-  { href: "/leaderboard", icon: Trophy,  label: "Leaderboard", color: "#d97706" },
   { href: "/search",      icon: Search,  label: "Students",    color: "#1a3c6e" },
   { href: "/notices",     icon: Bell,    label: "Notices",     color: "#f5820a" },
   { href: "/assignments", icon: BookOpen,label: "Assignments", color: "#7c3aed" },
@@ -39,14 +37,9 @@ export default function Dashboard() {
       
       // Parallel data fetching
       Promise.all([
-        fetch("/api/notices").then(r => r.json()),
-        fetch("/api/submit").then(r => r.json()),
-        fetch("/api/leaderboard").then(r => r.json())
-      ]).then(([noticeData, subData, lbData]) => {
+        fetch("/api/notices").then(r => r.json())
+      ]).then(([noticeData]) => {
         setNotices(noticeData.notices || []);
-        setSubs(subData.submissions || []);
-        const idx = (lbData.scores || []).findIndex((s: any) => s.username === u.username);
-        if (idx !== -1) setRank(idx + 1);
       });
     } catch {
       router.push("/login");
@@ -86,7 +79,6 @@ export default function Dashboard() {
               </h1>
               <p style={{ fontSize:13, color:"var(--cc-text-muted)", margin:0 }}>
                 {new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" })}
-                {rank ? <> · Ranked <strong style={{ color:"var(--cc-orange)" }}>#{rank}</strong> on leaderboard</> : null}
               </p>
             </div>
             {/* Stat strip */}
@@ -94,8 +86,8 @@ export default function Dashboard() {
               {[
                 { label:"User ID",       value:`#${user.id}`,          bg:"#f0f4ff", color:"var(--cc-navy)" },
                 { label:"Role",          value:user.role.toUpperCase(), bg: user.role==="admin"?"#fff0f0":"#fef3e2", color: user.role==="admin"?"#dc2626":"var(--cc-orange)" },
-                { label:"Flags",         value:`${correct.length}/4`,   bg:"#f0fdf4", color:"#16a34a" },
-                { label:"Points",        value:totalPts,                bg:"#fef3e2", color:"var(--cc-orange)" },
+                { label:"Class",         value:"12-A",                  bg:"#f0fdf4", color:"#16a34a" },
+                { label:"Attendance",    value:"94%",                   bg:"#fef3e2", color:"var(--cc-orange)" },
               ].map(s => (
                 <div key={s.label} style={{ background:s.bg, borderRadius:10, padding:"10px 16px", textAlign:"center", minWidth:72 }}>
                   <div style={{ fontSize:18, fontWeight:900, color:s.color, lineHeight:1 }}>{s.value}</div>
@@ -165,44 +157,29 @@ export default function Dashboard() {
             {/* Right Column */}
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
-              {/* Submissions Table */}
+              {/* Recent Activity / Classes */}
               <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-                <div style={{ padding:"12px 18px 12px 18px", borderBottom:"1px solid var(--cc-border)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <div style={{ fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>My Submissions</div>
-                  <Link href="/submit" style={{ fontSize:11, fontWeight:700, color:"var(--cc-orange)", textDecoration:"none" }}>View All →</Link>
+                <div style={{ padding:"12px 18px", borderBottom:"1px solid var(--cc-border)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>Today's Schedule</div>
                 </div>
-                {subs.length === 0 ? (
-                  <div style={{ padding:"40px 0", textAlign:"center", color:"var(--cc-text-muted)", fontSize:13 }}>No submissions yet</div>
-                ) : (
-                  <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                    <thead>
-                      <tr style={{ background:"var(--cc-navy)" }}>
-                        {["Flag", "Status", "Points", "Time"].map(h => (
-                          <th key={h} style={{ padding:"9px 16px", fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:1, textAlign:"left" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subs.slice(0, 5).map((s, i) => (
-                        <tr key={i} style={{ background: i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
-                          <td style={{ padding:"10px 16px", fontSize:12, fontFamily:"'DM Mono',monospace", color:"var(--cc-navy)" }}>{s.flag_name}</td>
-                          <td style={{ padding:"10px 16px" }}>
-                            {s.correct
-                              ? <span className="badge badge-green">VALID</span>
-                              : <span className="badge badge-red">FAILED</span>
-                            }
-                          </td>
-                          <td style={{ padding:"10px 16px", fontSize:13, fontWeight:800, color: s.correct?"var(--cc-orange)":"var(--cc-text-muted)" }}>
-                            {s.correct ? `+${s.points}` : "0"}
-                          </td>
-                          <td style={{ padding:"10px 16px", fontSize:11, color:"var(--cc-text-muted)", fontFamily:"'DM Mono',monospace" }}>
-                            {new Date(s.submitted_at).toLocaleTimeString("en-IN")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <div style={{ padding:18 }}>
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    {[
+                      { time: "08:30 AM", subject: "Mathematics", room: "Rm 402" },
+                      { time: "09:30 AM", subject: "Physics Lab", room: "Lab B" },
+                      { time: "11:00 AM", subject: "English Lit", room: "Rm 105" },
+                    ].map((cls, i) => (
+                      <div key={i} style={{ display:"flex", alignItems:"center", gap:14 }}>
+                        <div style={{ fontSize:11, fontWeight:800, color:"var(--cc-navy)", width:70 }}>{cls.time}</div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color:"var(--cc-text)" }}>{cls.subject}</div>
+                          <div style={{ fontSize:10, color:"var(--cc-text-muted)" }}>{cls.room}</div>
+                        </div>
+                        <div style={{ width:8, height:8, borderRadius:"50%", background: i===0?"var(--cc-orange)":"var(--cc-border)" }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Campus Bulletins */}

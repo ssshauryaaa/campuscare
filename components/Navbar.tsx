@@ -17,8 +17,6 @@ const NAV_ITEMS = [
   { href: "/search",      label: "Search Directory",  icon: Search          },
   { href: "/assignments", label: "Assignments",       icon: BookOpen        },
   { href: "/resources",   label: "Resources",         icon: Library         },
-  { href: "/submit",      label: "Submit Flag",       icon: Flag            },
-  { href: "/leaderboard", label: "Leaderboard",       icon: Trophy          },
   { href: "/jwt-debug",   label: "JWT Debugger",      icon: KeyRound        },
 ];
 
@@ -29,8 +27,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/search":      "Student Directory",
   "/assignments": "Assignments",
   "/resources":   "Resources",
-  "/submit":      "Submit Flag",
-  "/leaderboard": "Leaderboard",
   "/jwt-debug":   "JWT Debugger",
   "/admin":       "Admin Console",
 };

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { ShieldAlert } from "lucide-react";
 
-type Tab = "flags" | "notices" | "users" | "submissions";
+type Tab = "flags" | "notices" | "users";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function AdminPage() {
   const [flags, setFlags]       = useState<any[]>([]);
   const [notices, setNotices]   = useState<any[]>([]);
   const [users, setUsers]       = useState<any[]>([]);
-  const [subs, setSubs]         = useState<any[]>([]);
   const [error, setError]       = useState("");
   const [newNotice, setNew]     = useState({ title: "", content: "" });
   const [noticeMsg, setNMsg]    = useState("");
@@ -28,12 +27,10 @@ export default function AdminPage() {
       fetch("/api/admin/flags").then(r => r.json()),
       fetch("/api/admin/notices").then(r => r.json()),
       fetch("/api/users").then(r => r.json()),
-      fetch("/api/admin/submissions").then(r => r.json()),
-    ]).then(([f, n, u, s]) => {
+    ]).then(([f, n, u]) => {
       if (f.flags)   setFlags(f.flags);   else setError(f.error || "Access denied");
       if (n.notices) setNotices(n.notices);
       if (u.users)   setUsers(u.users);
-      if (s.submissions) setSubs(s.submissions);
       setLoading(false);
     });
   }, []);
@@ -57,7 +54,6 @@ export default function AdminPage() {
     { key:"flags",       label:"Flags",       count:flags.length       },
     { key:"notices",     label:"Notices",     count:notices.length     },
     { key:"users",       label:"Users",       count:users.length       },
-    { key:"submissions", label:"Submissions", count:subs.length        },
   ];
 
   const th = (label: string) => (
@@ -216,29 +212,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* SUBMISSIONS */}
-          {!loading && tab==="submissions" && (
-            <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                <thead><tr style={{ background:"var(--cc-navy)" }}>
-                  {["Username","Flag Name","Status","Points","Time"].map(th)}
-                </tr></thead>
-                <tbody>
-                  {subs.length===0 ? (
-                    <tr><td colSpan={5} style={{ padding:24, color:"var(--cc-text-muted)", fontSize:13 }}>No submissions yet.</td></tr>
-                  ) : subs.map((s, i) => (
-                    <tr key={i} style={{ background:i%2===0?"#fff":"#f8f9fa", borderBottom:"1px solid var(--cc-border)" }}>
-                      {td(<span style={{ fontFamily:"'DM Mono',monospace", fontSize:11 }}>{s.username}</span>)}
-                      {td(s.flag_name || "—")}
-                      {td(s.correct ? <span className="badge badge-green">CORRECT</span> : <span className="badge badge-red">WRONG</span>)}
-                      {td(<span style={{ fontWeight:800, color: s.correct?"var(--cc-orange)":"var(--cc-text-muted)" }}>{s.correct?`+${s.points}`:"—"}</span>)}
-                      {td(new Date(s.submitted_at).toLocaleString("en-IN"), true)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+
         </main>
       </div>
     </div>

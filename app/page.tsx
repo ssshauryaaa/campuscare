@@ -9,8 +9,6 @@ import { Shield, Bell, Trophy, Flag, FileText, Library } from "lucide-react";
 const QUICK_LINKS = [
   { href: "/login",       icon: Shield,   label: "Student Login",    desc: "Access your portal account",  accent: "#1a3c6e" },
   { href: "/notices",     icon: Bell,     label: "Notice Board",     desc: "School announcements",         accent: "#f5820a" },
-  { href: "/leaderboard", icon: Trophy,   label: "Leaderboard",      desc: "Breach@trix live scores",      accent: "#d97706" },
-  { href: "/submit",      icon: Flag,     label: "Submit Flag",      desc: "Claim your challenge points",  accent: "#16a34a" },
   { href: "/assignments", icon: FileText, label: "Assignments",      desc: "Pending class work",           accent: "#7c3aed" },
   { href: "/resources",   icon: Library,  label: "Resources",        desc: "Study materials & timetable", accent: "#0891b2" },
 ];
@@ -49,7 +47,7 @@ export default function Home() {
           </Link>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <Link href="/notices" style={{ padding:"6px 16px", fontSize:13, fontWeight:600, color:"var(--cc-navy)", textDecoration:"none" }}>Notices</Link>
-            <Link href="/leaderboard" style={{ padding:"6px 16px", fontSize:13, fontWeight:600, color:"var(--cc-navy)", textDecoration:"none" }}>Leaderboard</Link>
+            <Link href="/assignments" style={{ padding:"6px 16px", fontSize:13, fontWeight:600, color:"var(--cc-navy)", textDecoration:"none" }}>Assignments</Link>
             <Link href="/login" style={{ padding:"8px 20px", borderRadius:8, fontSize:13, fontWeight:800, color:"#fff", background:"var(--cc-orange)", textDecoration:"none" }}>Student Login →</Link>
           </div>
         </div>
@@ -80,7 +78,7 @@ export default function Home() {
           {[
             { label:"Academic Year", value:"2025–26", sub:"Current Session" },
             { label:"Affiliation",   value:"CBSE",    sub:"School No. 1234" },
-            { label:"Competition",   value:"Breach@trix Finals", sub:"8th May 2026" },
+            { label:"Curriculum",    value:"Integrated", sub:"Academic Program" },
           ].map(c => (
             <div key={c.label} style={{ background:"#fff", borderRadius:12, padding:"18px 22px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:"1px solid var(--cc-border)" }}>
               <div style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>{c.label}</div>
@@ -168,7 +166,7 @@ export default function Home() {
             © 2026 Greenfield International School &nbsp;·&nbsp; Powered by <strong style={{ color:"var(--cc-navy)" }}>Entab CampusCare</strong>
           </div>
           <div style={{ display:"flex", gap:20 }}>
-            {[["Login","/login"],["Notices","/notices"],["Leaderboard","/leaderboard"],["Register","/register"]].map(([label,href])=>(
+            {[["Login","/login"],["Notices","/notices"],["Assignments","/assignments"],["Register","/register"]].map(([label,href])=>(
               <Link key={href} href={href} style={{ fontSize:12, color:"var(--cc-text-muted)", textDecoration:"none", fontWeight:600 }}>{label}</Link>
             ))}
           </div>
