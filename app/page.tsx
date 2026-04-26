@@ -7,17 +7,17 @@ import { Shield, Bell, Trophy, Flag, FileText, Library, ArrowRight, Activity, Te
 // Right-click → View Page Source → Ctrl+F → BREACH
 
 const QUICK_LINKS = [
-  { href: "/login",       icon: Shield,   label: "Student Login",    desc: "Access your portal account",  accent: "#3b82f6" },
-  { href: "/notices",     icon: Bell,     label: "Notice Board",     desc: "School announcements",         accent: "#f59e0b" },
-  { href: "/assignments", icon: FileText, label: "Assignments",      desc: "Pending class work",           accent: "#8b5cf6" },
-  { href: "/resources",   icon: Library,  label: "Resources",        desc: "Study materials & timetable", accent: "#06b6d4" },
+  { href: "/login", icon: Shield, label: "Student Login", desc: "Access your portal account", accent: "#3b82f6" },
+  { href: "/notices", icon: Bell, label: "Notice Board", desc: "School announcements", accent: "#f59e0b" },
+  { href: "/assignments", icon: FileText, label: "Assignments", desc: "Pending class work", accent: "#8b5cf6" },
+  { href: "/resources", icon: Library, label: "Resources", desc: "Study materials & timetable", accent: "#06b6d4" },
 ];
 
 const ANNOUNCEMENTS = [
-  { date: "15 Apr", text: "Parent-Teacher Meeting — Block A",  type: "PTM"     },
-  { date: "20 Apr", text: "Annual Sports Day — Main Ground",   type: "EVENT"   },
-  { date: "22 Apr", text: "Exam timetable now available",      type: "EXAM"    },
-  { date: "8 May",  text: "Breach@trix Finals — 8th May",      type: "CONTEST" },
+  { date: "15 Apr", text: "Parent-Teacher Meeting — Block A", type: "PTM" },
+  { date: "20 Apr", text: "Annual Sports Day — Main Ground", type: "EVENT" },
+  { date: "22 Apr", text: "Exam timetable now available", type: "EXAM" },
+  { date: "8 May", text: "Breach@trix Finals — 8th May", type: "CONTEST" },
 ];
 
 export default function Home() {
@@ -34,7 +34,7 @@ export default function Home() {
           JWT_SECRET is set to "secret" for now — change this!
           =====================================================
       */}
-      
+
       {/* Dynamic Style Blocks for Keyframes */}
       <style>{`
         @keyframes fadeUp {
@@ -139,7 +139,7 @@ export default function Home() {
       <section className="hero-bg" style={{ padding: "100px 24px 80px", textAlign: "center", minHeight: "450px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", position: "relative", zIndex: 10 }}>
           <div className="stagger-1" style={{ display: "inline-block", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", padding: "6px 16px", borderRadius: "20px", color: "#60a5fa", fontSize: 12, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 24 }}>
-            Academic Year 2025–26 · CBSE Affiliated
+            Academic Year 2026–27 · CBSE Affiliated
           </div>
           <h1 className="stagger-2" style={{ fontSize: 56, fontWeight: 900, color: "#f8fafc", margin: "0 0 20px", lineHeight: 1.1, letterSpacing: "-1.5px" }}>
             Tagore International <span style={{ color: "#3b82f6" }}>School</span>
@@ -162,7 +162,7 @@ export default function Home() {
 
       {/* Main Content */}
       <div style={{ maxWidth: 1280, margin: "-40px auto 0", padding: "0 24px 60px", position: "relative", zIndex: 20 }}>
-        
+
         {/* Info Strip */}
         <div className="stagger-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 40 }}>
           {[
@@ -251,11 +251,11 @@ export default function Home() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <tbody>
                     {[
-                      { label: "Portal Version", value: "v2.3.1",           st: null       },
-                      { label: "Framework",      value: "Next.js 14",        st: null       },
-                      { label: "Database",       value: "SQLite (campus.db)", st: null      },
-                      { label: "Environment",    value: "DEVELOPMENT",        st: "warning" },
-                      { label: "Debug Mode",     value: "ENABLED",            st: "danger"  },
+                      { label: "Portal Version", value: "v2.3.1", st: null },
+                      { label: "Framework", value: "Next.js 14", st: null },
+                      { label: "Database", value: "SQLite (campus.db)", st: null },
+                      { label: "Environment", value: "DEVELOPMENT", st: "warning" },
+                      { label: "Debug Mode", value: "ENABLED", st: "danger" },
                     ].map((row, i, arr) => (
                       <tr key={i} style={{ borderBottom: i < arr.length - 1 ? "1px dashed #334155" : "none" }}>
                         <td style={{ padding: "12px 0", fontSize: 13, color: "#94a3b8", fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
@@ -265,8 +265,8 @@ export default function Home() {
                           {row.st === "warning"
                             ? <span style={{ fontSize: 11, fontWeight: 800, background: "rgba(245,158,11,0.2)", color: "#fbbf24", border: "1px solid rgba(245,158,11,0.3)", borderRadius: "6px", padding: "4px 8px", textTransform: "uppercase" }}>{row.value}</span>
                             : row.st === "danger"
-                            ? <span style={{ fontSize: 11, fontWeight: 800, background: "rgba(239,68,68,0.2)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "6px", padding: "4px 8px", textTransform: "uppercase", animation: "glow 2s infinite" }}>{row.value}</span>
-                            : <span style={{ fontSize: 12, color: "#e2e8f0", fontFamily: "monospace", fontWeight: 600 }}>{row.value}</span>
+                              ? <span style={{ fontSize: 11, fontWeight: 800, background: "rgba(239,68,68,0.2)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "6px", padding: "4px 8px", textTransform: "uppercase", animation: "glow 2s infinite" }}>{row.value}</span>
+                              : <span style={{ fontSize: 12, color: "#e2e8f0", fontFamily: "monospace", fontWeight: 600 }}>{row.value}</span>
                           }
                         </td>
                       </tr>
