@@ -154,6 +154,19 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
 
 ---
 
+### 📂 File System / Directory Traversal
+
+#### 15. Local File Inclusion (LFI) — Document Viewer
+*   **Location:** `/documents` -> URL `?file=` parameter
+*   **Vulnerability:** The backend API reads files from the disk using the user-provided filename without sanitizing directory traversal sequences.
+*   **How to Exploit:**
+    1. Navigate to the Campus Documents page (`/documents`).
+    2. Click on a document and observe the URL (e.g., `?file=handbook.txt`).
+    3. Modify the URL parameter directly in your address bar: `http://localhost:3000/documents?file=../../.env`
+    4. Press Enter. The server will escape its public directory and dump its highly sensitive `.env` file directly into the document viewer.
+
+---
+
 ## 🛡️ Blue Team: Defense Dashboard
 
 The heart of the defensive experience is the **Blue Team Defense Dashboard** (`/defense`). This is where security analysts monitor the system, triage threats, and deploy code-level patches.
@@ -180,6 +193,18 @@ Once a patch is deployed via the IDE:
 *   **Active Interception:** The application's frontend will now actively intercept specific exploit payloads.
 *   **Feedback Loop:** Attackers will see a professional **🛡️ PATCHED** banner, and their malicious requests will be blocked.
 
+---
+
+## 🔧 Event Administration
+
+When running CampusCare as a live CTF event, organizers need a way to reset the environment between rounds or teams.
+
+*   **Location:** `/admin/reset` (Not linked in the main UI)
+*   **Password:** `breach@trix2025`
+*   **Features:**
+    *   **Full Environment Reset:** Clears all browser `localStorage` state (Patched vulnerabilities, Real attack logs, Scanner state).
+    *   **State Snapshot:** View exactly which defensive systems are currently active.
+    *   **Live Log:** Watch the reset operations execute in real-time.
 
 ---
 
