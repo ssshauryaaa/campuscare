@@ -17,7 +17,8 @@ export type AttackType =
   | "xss_feedback"     // stored XSS via admin response in feedback
   | "open_redirect"    // ?next= param redirects to external URL
   | "session_fixation" // old JWT still valid after logout
-  | "recon";           // sensitive info found (env, source comment, backup panel)
+  | "recon"            // sensitive info found (env, source comment, backup panel)
+  | "lfi_documents";   // LFI: Directory traversal to read local files
 
 export type FilterTab = "all" | "acknowledged" | "patched";
 

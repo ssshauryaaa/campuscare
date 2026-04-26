@@ -59,6 +59,7 @@ export const TYPE_LABELS: Record<AttackType, string> = {
   open_redirect:   "OPEN REDIRECT",
   session_fixation:"SESSION FIXATION",
   recon:           "RECON / DATA LEAK",
+  lfi_documents:   "LFI — DOCUMENTS",
 };
 
 // ── Attack type badge colours ─────────────────────────────────────────────────
@@ -80,6 +81,7 @@ export const TYPE_COLORS: Record<AttackType, { text: string; bg: string; border:
   open_redirect:   { text: "#065f46", bg: "#ecfdf5", border: "#6ee7b7" },
   session_fixation:{ text: "#374151", bg: "#f9fafb", border: "#d1d5db" },
   recon:           { text: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+  lfi_documents:   { text: "#b91c1c", bg: "#fef2f2", border: "#fca5a5" },
 };
 
 // ── Patch scoring ─────────────────────────────────────────────────────────────
@@ -101,4 +103,5 @@ export const PATCH_POINTS: Record<AttackType, number> = {
   open_redirect:     50,
   session_fixation:  75,
   recon:             50,
+  lfi_documents:     85,
 };

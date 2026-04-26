@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Bell, Search, BookOpen, Library,
   Flag, Trophy, KeyRound, ShieldAlert, LogOut,
-  ChevronRight, GraduationCap,
+  ChevronRight, GraduationCap, FileText
 } from "lucide-react";
 
 interface User { id: number; username: string; role: string; }
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/dashboard",   label: "Dashboard",        icon: LayoutDashboard },
   { href: "/notices",     label: "Notices",           icon: Bell            },
   { href: "/search",      label: "Search Directory",  icon: Search          },
+  { href: "/documents",   label: "Campus Documents",  icon: FileText        },
   { href: "/assignments", label: "Assignments",       icon: BookOpen        },
   { href: "/resources",   label: "Resources",         icon: Library         },
   { href: "/jwt-debug",   label: "JWT Debugger",      icon: KeyRound        },
@@ -24,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/":            "Home",
   "/dashboard":   "Dashboard",
   "/notices":     "Notice Board",
+  "/documents":   "Campus Documents",
   "/search":      "Student Directory",
   "/assignments": "Assignments",
   "/resources":   "Resources",

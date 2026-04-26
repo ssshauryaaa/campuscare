@@ -452,4 +452,23 @@ export async function GET(req: NextRequest) {
       },
     ],
   },
+
+  // ── LFI / Path Traversal ───────────────────────────────────────────────────────
+  lfi_documents: {
+    title: "Local File Inclusion — Documents",
+    description: "The API endpoint uses the user-provided file name directly in fs.readFileSync without preventing directory traversal. Attackers can use ../ to escape the intended directory and read sensitive files.",
+    files: [
+      {
+        path: "app/api/documents/route.ts",
+        label: "documents/route.ts",
+        vulnerableSnippet: `// VULNERABILITY: Directory traversal possible via unsanitized file parameter
+  const targetPath = path.join(process.cwd(), "public", "documents", file);
+  const content = fs.readFileSync(targetPath, "utf-8");`,
+        fixHint: `// FIX: Use path.basename() to strip out directory traversal sequences like ../
+  const safeFile = path.basename(file);
+  const targetPath = path.join(process.cwd(), "public", "documents", safeFile);
+  const content = fs.readFileSync(targetPath, "utf-8");`,
+      },
+    ],
+  },
 };
