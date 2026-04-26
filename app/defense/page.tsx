@@ -8,24 +8,20 @@ import { ThreatInspector } from "@/components/defense/ThreatInspector";
 import { ScoreLedger } from "@/components/defense/ScoreLedger";
 import { addPatchedVuln } from "@/lib/logAttack";
 
-function fmtElapsed(s: number) {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${m}:${sec}`;
-}
+
 
 export default function DefensePage() {
-  const [isRunning, setIsRunning]     = useState(true);
-  const [selected, setSelected]       = useState<string | null>(null);
-  const [filterTab, setFilterTab]     = useState<"all"|"acknowledged"|"patched">("all");
-  const [score, setScore]             = useState(0);
+  const [isRunning, setIsRunning] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [filterTab, setFilterTab] = useState<"all" | "acknowledged" | "patched">("all");
+  const [score, setScore] = useState(0);
   const [detectScore, setDetectScore] = useState(0);
   const [scoreHistory, setScoreHistory] = useState<{ points: number; ts: number; detail: string; type: AttackType }[]>([]);
   const [patchedTypes, setPatchedTypes] = useState<Set<AttackType>>(new Set());
 
-  const [toast, showToast]  = useToast();
+  const [toast, showToast] = useToast();
   const { logs, setLogs, alertFlash } = useAttackSimulator(patchedTypes, isRunning);
-  const elapsed = useTimer(isRunning);
+
   const selectedLog = logs.find(l => l.id === selected);
 
   // ── Acknowledge ─────────────────────────────────────────────────────────────
@@ -94,7 +90,7 @@ export default function DefensePage() {
               <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffff", letterSpacing: "-.01em" }}>
                 CampusCare <span style={{ color: "#f5820a" }}>Defense</span>
               </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>Blue Team Console · Breach@trix Finals</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>Blue Team Console · Breach@trix</div>
             </div>
           </div>
 
@@ -120,11 +116,7 @@ export default function DefensePage() {
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: ".1em", marginBottom: 1 }}>BLUE TEAM SCORE</div>
             <div style={{ fontSize: 24, fontWeight: 800, color: "#f5820a", lineHeight: 1, letterSpacing: "-.03em", fontFamily: mono }}>{score.toLocaleString()}</div>
           </div>
-          <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: ".1em", marginBottom: 1 }}>UPTIME</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: isRunning ? "#ffffff" : "rgba(255,255,255,0.3)", lineHeight: 1, fontFamily: mono }}>{fmtElapsed(elapsed)}</div>
-          </div>
+
           <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => setLogs([])} style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 12px", borderRadius: 6, cursor: "pointer", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }}>CLEAR</button>

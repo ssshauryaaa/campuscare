@@ -122,6 +122,7 @@ export default function ProfilePage() {
               {/* Patch banners */}
               {patchedVulns.has("xss_profile") && <PatchedBanner label="XSS — PROFILE NAME" />}
               {patchedVulns.has("sqli_profile") && <PatchedBanner label="SQLI — PROFILE URL" />}
+              {patchedVulns.has("idor_profile") && !isOwn && <PatchedBanner label="IDOR — UNAUTHORIZED PROFILE ACCESS" />}
 
               {/* Header Card */}
               <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", padding:"28px 28px", display:"flex", alignItems:"center", gap:22 }}>

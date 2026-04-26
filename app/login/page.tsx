@@ -44,10 +44,15 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    if (/('|--|OR\s+1=1)/i.test(form.username)) {
-      if (!patchedVulns.has("sqli_login")) {
-        logRealAttack({ type: "sqli_login", detail: `SQLi auth bypass attempt`, endpoint: "/api/auth/login", method: "POST", payload: `username=${form.username}` });
+    const isSqliPayload = /('|--|OR\s+1=1)/i.test(form.username);
+    if (isSqliPayload) {
+      if (patchedVulns.has("sqli_login")) {
+        // Patched: show blocked message and stop
+        setError("🛡 SQL injection attempt blocked — this vulnerability has been patched by the Blue Team.");
+        setLoading(false);
+        return;
       }
+      logRealAttack({ type: "sqli_login", detail: `SQLi auth bypass attempt`, endpoint: "/api/auth/login", method: "POST", payload: `username=${form.username}` });
     } else if (form.username.includes("<script") || form.username.includes("onerror")) {
       if (!patchedVulns.has("xss_login")) {
         logRealAttack({ type: "xss_login", severity: "medium", detail: `Reflected XSS via login error message`, endpoint: "/login", method: "POST", payload: `username=${form.username}` });
@@ -77,9 +82,13 @@ export default function LoginPage() {
           router.push(nextUrl || "/dashboard");
         }
       } else {
-        // VULNERABILITY: Verbose error reporting leaks SQL query
-        const errorMessage = data.error + (data.debug_query ? `\n\n[Query Leaked]:\n${data.debug_query}` : "");
-        setError(errorMessage);
+        // VULNERABILITY: Verbose error reporting leaks SQL query (unless sqli_login is patched)
+        if (patchedVulns.has("sqli_login")) {
+          setError(data.error || "Invalid username or password.");
+        } else {
+          const errorMessage = data.error + (data.debug_query ? `\n\n[Query Leaked]:\n${data.debug_query}` : "");
+          setError(errorMessage);
+        }
       }
     } catch (err) {
       setError("Connection failed. Is the API running?");

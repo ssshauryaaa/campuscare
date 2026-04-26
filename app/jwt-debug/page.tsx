@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { ShieldAlert, Terminal, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+import { PatchedBanner } from "@/components/PatchedBanner";
 
 interface Decoded { header: any; payload: any; sig: string; }
 
@@ -40,6 +42,7 @@ export default function JwtDebugPage() {
   const [verifyRes, setVerifyRes] = useState<any>(null);
   const [verifying, setVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
@@ -67,6 +70,11 @@ export default function JwtDebugPage() {
   };
 
   const verify = async () => {
+    // If jwt_forge is patched, block the verify and show message
+    if (patchedVulns.has("jwt_forge")) {
+      setVerifyRes({ valid: false, error: "🛡 JWT forgery patched — the server now rejects the 'none' algorithm and enforces strong secret validation. This attack vector is closed." });
+      return;
+    }
     setVerifying(true);
     try {
       const res = await fetch("/api/auth/verify", {
@@ -87,12 +95,19 @@ export default function JwtDebugPage() {
         <main style={{ padding:"28px 28px", maxWidth:960 }}>
 
           {/* Warning Banner */}
-          <div style={{ background:"rgba(245,130,10,0.08)", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:10, padding:"12px 18px", marginBottom:22, display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ background:"rgba(245,130,10,0.08)", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:10, padding:"12px 18px", marginBottom:16, display:"flex", alignItems:"center", gap:12 }}>
             <AlertTriangle style={{ width:18, height:18, color:"var(--cc-orange)", flexShrink:0 }} />
             <p style={{ fontSize:12, fontWeight:700, color:"var(--cc-orange)", margin:0 }}>
               ⚠ Internal Developer Utility — Remove Before Production Deployment
             </p>
           </div>
+
+          {/* Blue Team Patch Banner */}
+          {patchedVulns.has("jwt_forge") && (
+            <div style={{ marginBottom: 16 }}>
+              <PatchedBanner label="JWT FORGERY — NONE ALGORITHM & WEAK SECRET" />
+            </div>
+          )}
 
           {/* Header */}
           <div style={{ marginBottom:24, display:"flex", flexDirection:"column" as any, gap:4 }}>

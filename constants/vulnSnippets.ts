@@ -314,4 +314,142 @@ const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));`
       },
     ],
   },
+
+  // ── JWT Forgery ───────────────────────────────────────────────────────────────
+  jwt_forge: {
+    title: "JWT Forgery — Weak Secret & None Algorithm",
+    description: "The JWT verification explicitly allows the 'none' algorithm, enabling signature bypass. The secret is also hardcoded as 'secret', making it trivially brute-forceable.",
+    files: [
+      {
+        path: "lib/auth.ts",
+        label: "auth.ts",
+        vulnerableSnippet: `// VULNERABILITY 1: Weak, hardcoded secret
+const JWT_SECRET = process.env.JWT_SECRET ?? "secret";
+
+// VULNERABILITY 2: 'none' algorithm explicitly allowed in verify
+export function verifyToken(token: string) {
+  try {
+    // algorithms array includes "none" — attacker can strip signature
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256", "none"],
+    }) as JwtPayload;
+  } catch {
+    return null;
+  }
+}`,
+        fixHint: `// FIX 1: Use a long random secret from environment — never a default
+const JWT_SECRET = process.env.JWT_SECRET!; // throw if missing
+
+// FIX 2: Only allow HS256 — never include 'none'
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    }) as JwtPayload;
+  } catch {
+    return null;
+  }
+}`,
+      },
+    ],
+  },
+
+  // ── Session Fixation ──────────────────────────────────────────────────────────
+  session_fixation: {
+    title: "Session Fixation — Token Valid After Logout",
+    description: "The logout route only clears the client-side cookie. JWTs are stateless and have no server-side blocklist, so a copied token remains valid until natural expiry.",
+    files: [
+      {
+        path: "app/api/auth/login/route.ts",
+        label: "login/route.ts",
+        vulnerableSnippet: `// VULNERABILITY: HttpOnly not set → token readable by JS → can be copied
+res.cookies.set("token", token, {
+  httpOnly: false,  // ← attacker can read via document.cookie
+  path: "/",
+  maxAge: 60 * 60 * 24,
+  sameSite: "lax",
+});`,
+        fixHint: `// FIX: Set HttpOnly so JS can't read the token
+res.cookies.set("token", token, {
+  httpOnly: true,   // ← inaccessible to document.cookie
+  secure: true,     // ← HTTPS only in production
+  path: "/",
+  maxAge: 60 * 60 * 8,  // shorter-lived sessions
+  sameSite: "strict",
+});`,
+      },
+      {
+        path: "app/api/auth/logout/route.ts",
+        label: "logout/route.ts",
+        vulnerableSnippet: `// VULNERABILITY: No server-side token blocklist
+// Clearing the cookie doesn't invalidate the token itself
+// A copied token can be replayed until it expires (24h)
+export async function POST() {
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("token", "", { maxAge: 0, path: "/" });
+  return res;
+}`,
+        fixHint: `// FIX: Maintain a server-side blocklist of invalidated JTIs
+// On login, embed a unique jti claim; on logout, add it to the blocklist
+const tokenBlocklist = new Set<string>();
+
+export async function POST(req: NextRequest) {
+  const token = req.cookies.get("token")?.value;
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded?.jti) tokenBlocklist.add(decoded.jti);
+  }
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("token", "", { maxAge: 0, path: "/" });
+  return res;
+}`,
+      },
+    ],
+  },
+
+  // ── Recon / Data Leak ─────────────────────────────────────────────────────────
+  recon: {
+    title: "Recon — Sensitive Data Exposure",
+    description: "Admin credentials, DB paths, and JWT secrets are exposed in multiple places: HTML source comments, the /.env endpoint, and verbose error messages.",
+    files: [
+      {
+        path: "app/page.tsx",
+        label: "page.tsx",
+        vulnerableSnippet: `{/* =====================================================
+    Developer Notes — TODO: REMOVE BEFORE GO-LIVE
+    =====================================================
+    Admin panel: /admin
+    Admin creds backup: admin / Admin@Campus2025
+    Flag: BREACH{s0urce_c0de_n3v3r_li3s}
+    DB location: ./campus.db
+    Secrets: see /.env
+    JWT_SECRET is set to "secret" for now — change this!
+    =====================================================
+*/}`,
+        fixHint: `{/* FIX: Remove ALL developer comments before deployment.
+    Never store credentials, file paths, or secrets in client-side HTML.
+    Use environment variables managed outside the codebase.
+    Run: grep -r "TODO\\|FIXME\\|password\\|secret" ./app before shipping.
+*/}`,
+      },
+      {
+        path: "app/api/env-file/route.ts",
+        label: "env-file/route.ts",
+        vulnerableSnippet: `// VULNERABILITY: Serves the raw .env file contents to any client
+import { readFileSync } from "fs";
+export async function GET() {
+  const content = readFileSync(".env", "utf-8");
+  return new Response(content, {
+    headers: { "Content-Type": "text/plain" },
+  });
+}`,
+        fixHint: `// FIX: Remove this endpoint entirely, or restrict to admin-only
+// Never expose .env file contents over HTTP.
+// If needed for debugging, use:
+export async function GET(req: NextRequest) {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}`,
+      },
+    ],
+  },
 };
