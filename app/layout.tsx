@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CampusCare | Greenfield International School",
-  description: "Greenfield International School — Student Portal powered by Entab CampusCare. Access notices, assignments, results and more.",
+  title: "CampusCare | Tagore International School",
+  description: "Tagore International School — Student Portal powered by Entab CampusCare. Access notices, assignments, results and more.",
 };
 
 export default function RootLayout({

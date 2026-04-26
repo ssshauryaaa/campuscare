@@ -111,7 +111,7 @@ export default function LoginPage() {
           <div style={{ width:60, height:3, background:"var(--cc-orange)", borderRadius:2, margin:"0 auto 28px" }}/>
 
           <h2 style={{ fontSize:22, fontWeight:800, color:"#fff", margin:"0 0 10px", lineHeight:1.3 }}>
-            Greenfield International School
+            Tagore International School
           </h2>
           <p style={{ fontSize:13, color:"rgba(255,255,255,0.65)", margin:"0 0 40px", lineHeight:1.6 }}>
             Secure student portal. Access your academic dashboard, notices, assignments and results.

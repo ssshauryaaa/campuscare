@@ -84,7 +84,7 @@ export default function AdminPage() {
           {/* Header */}
           <div style={{ marginBottom:20 }}>
             <h1 style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", margin:"0 0 3px" }}>Admin Panel</h1>
-            <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Greenfield International School — System Administration</p>
+            <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Tagore International School — System Administration</p>
           </div>
 
           {/* Access Denied */}

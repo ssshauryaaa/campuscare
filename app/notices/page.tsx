@@ -109,7 +109,7 @@ export default function NoticesPage() {
           <div style={{ background:"#fff", borderRadius:12, padding:"18px 24px", marginBottom:20, border:"1px solid var(--cc-border)", boxShadow:"0 2px 8px rgba(0,0,0,0.04)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div>
               <h1 style={{ fontSize:20, fontWeight:900, color:"var(--cc-navy)", margin:"0 0 3px" }}>Notice Board</h1>
-              <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Greenfield International · Official Bulletin</p>
+              <p style={{ fontSize:12, color:"var(--cc-text-muted)", margin:0 }}>Tagore International · Official Bulletin</p>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(22,163,74,0.08)", border:"1px solid rgba(22,163,74,0.2)", padding:"4px 12px", borderRadius:20 }}>
               <span style={{ position:"relative", display:"inline-flex", width:8, height:8 }}>

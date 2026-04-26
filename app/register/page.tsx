@@ -121,7 +121,7 @@ export default function RegisterPage() {
             <div style={{ fontSize:8, color:"var(--cc-orange)", fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>by Entab</div>
           </div>
         </Link>
-        <span style={{ fontSize:11, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>Greenfield International School</span>
+        <span style={{ fontSize:11, fontWeight:700, color:"var(--cc-text-muted)", textTransform:"uppercase", letterSpacing:2 }}>Tagore International School</span>
       </header>
 
       <main style={{ flex:1, display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"36px 24px" }}>
@@ -132,7 +132,7 @@ export default function RegisterPage() {
             <div style={{ width:28, height:28, borderRadius:"50%", background:"var(--cc-orange)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:900, fontSize:11 }}>C</div>
             <div>
               <div style={{ color:"#fff", fontWeight:800, fontSize:14 }}>CampusCare Registration</div>
-              <div style={{ color:"rgba(255,255,255,0.6)", fontSize:11 }}>Enroll into the Greenfield educational network</div>
+              <div style={{ color:"rgba(255,255,255,0.6)", fontSize:11 }}>Enroll into the Tagore educational network</div>
             </div>
           </div>
 

@@ -224,7 +224,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <GraduationCap className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
           <span className="text-sm font-semibold" style={{ color: "var(--cc-text-muted)" }}>
-            Greenfield International School
+            Tagore International School
           </span>
           <Bell className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
           <span className="text-xs font-medium" style={{ color: "var(--cc-text-muted)" }}>
