@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { AttackType } from "@/types/defense";
 import { sans, mono, TYPE_LABELS, PATCH_POINTS } from "@/constants/campusTheme";
 import { useAttackSimulator, useTimer, useToast } from "@/hooks/useCampusDefense";
@@ -7,6 +7,7 @@ import { LogRow } from "@/components/defense/LogRow";
 import { ThreatInspector } from "@/components/defense/ThreatInspector";
 import { ScoreLedger } from "@/components/defense/ScoreLedger";
 import { addPatchedVuln } from "@/lib/logAttack";
+import { VulnerabilityScanner } from "@/components/defense/VulnerabilityScanner";
 
 
 
@@ -18,11 +19,31 @@ export default function DefensePage() {
   const [detectScore, setDetectScore] = useState(0);
   const [scoreHistory, setScoreHistory] = useState<{ points: number; ts: number; detail: string; type: AttackType }[]>([]);
   const [patchedTypes, setPatchedTypes] = useState<Set<AttackType>>(new Set());
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanUsed, setScanUsed] = useState(false);
 
   const [toast, showToast] = useToast();
   const { logs, setLogs, alertFlash } = useAttackSimulator(patchedTypes, isRunning);
 
   const selectedLog = logs.find(l => l.id === selected);
+
+  // Check if scan has already been started (localStorage)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setScanUsed(!!localStorage.getItem("campuscare_scan_startTs"));
+    }
+  }, []);
+
+  function handleScanComplete(pts: number) {
+    setScore(s => s + pts);
+    setScoreHistory(h => [{ points: pts, ts: Date.now(), detail: "Active vulnerability scan completed", type: "recon" as AttackType }, ...h].slice(0, 50));
+    showToast(`🔍 Scan complete — ${pts} bonus pts awarded!`);
+  }
+
+  function openScanner() {
+    setScanUsed(true);
+    setScanOpen(true);
+  }
 
   // ── Acknowledge ─────────────────────────────────────────────────────────────
   function acknowledge(logId: string) {
@@ -119,6 +140,15 @@ export default function DefensePage() {
 
           <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
           <div style={{ display: "flex", gap: 8 }}>
+            {/* Vulnerability Scanner — one-time use */}
+            <button
+              onClick={scanUsed ? () => setScanOpen(true) : openScanner}
+              title={scanUsed ? "View scan results" : "Run one-time vulnerability scan (2 min)"}
+              style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 14px", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, background: scanUsed ? "rgba(96,165,250,0.15)" : "rgba(245,130,10,0.15)", border: `1px solid ${scanUsed ? "rgba(96,165,250,0.4)" : "rgba(245,130,10,0.4)"}`, color: scanUsed ? "#93c5fd" : "#f5820a" }}
+            >
+              🔍 {scanUsed ? "VIEW SCAN" : "RUN SCAN"}
+              {!scanUsed && <span style={{ fontSize: 9, background: "rgba(245,130,10,0.2)", border: "1px solid rgba(245,130,10,0.3)", padding: "1px 5px", borderRadius: 3, letterSpacing: ".06em" }}>1× USE</span>}
+            </button>
             <button onClick={() => setLogs([])} style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 12px", borderRadius: 6, cursor: "pointer", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }}>CLEAR</button>
             <button onClick={() => setIsRunning(v => !v)} style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 14px", borderRadius: 6, cursor: "pointer", ...(isRunning ? { background: "rgba(245,130,10,0.15)", border: "1px solid rgba(245,130,10,0.4)", color: "#f5820a" } : { background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.4)", color: "#4ade80" }) }}>
               {isRunning ? "⏸ PAUSE" : "▶ RESUME"}
@@ -198,6 +228,15 @@ export default function DefensePage() {
           <ScoreLedger scoreHistory={scoreHistory} />
         </div>
       </div>
+
+      {/* Vulnerability Scanner modal */}
+      {scanOpen && (
+        <VulnerabilityScanner
+          patchedTypes={patchedTypes}
+          onClose={() => setScanOpen(false)}
+          onScanComplete={handleScanComplete}
+        />
+      )}
 
       <style>{`
         @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500;700&display=swap");
