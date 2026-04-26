@@ -156,21 +156,30 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
 
 ## 🛡️ Blue Team: Defense Dashboard
 
-In addition to the offensive experience, CampusCare features a fully gamified **Blue Team Defense Console**. Defenders can detect, acknowledge, and patch vulnerabilities in real-time.
+The heart of the defensive experience is the **Blue Team Defense Dashboard** (`/defense`). This is where security analysts monitor the system, triage threats, and deploy code-level patches.
 
-### Accessing the Console
-Log in as an administrator (e.g., username `admin`, bypass password using SQLi or use default creds) and navigate to the **Defense Console** via the sidebar, or go directly to `/defense`.
+### 📡 Real-Time Intrusion Detection (IDS)
+*   **Live Monitoring:** Watch real-time simulated and manual attack traffic flow into the console.
+*   **Severity Triage:** Critical events trigger visual UI alarms (Red Flash) to alert defenders of high-impact breaches (e.g., SQLi auth bypass).
+*   **Deep Packet Inspection:** Click any log to open the **Threat Inspector**, revealing source IPs, HTTP metadata, and the exact raw payload used by the attacker.
 
-### Features
-1. **Real-Time Threat Feed:** Watch simulated attacks and your own red-team exploits appear in the log feed in real-time. Critical severity events trigger visual alarms.
-2. **Threat Inspector:** Click on any event to inspect the raw payload, source IP, and HTTP metadata.
-3. **Interactive Remediation Workflow:**
-   *   **Acknowledge Threat:** Triage the event and earn initial points.
-   *   **Fix Vulnerability Code:** Opens an integrated **IDE Modal**.
-4. **Integrated IDE Modal:** 
-   *   Explore a multi-file tab layout to locate the vulnerability across frontend (`page.tsx`) and backend (`route.ts`) files.
-   *   Write the patch code directly in the browser. Use the built-in hint system if you get stuck.
-5. **Instant Patch Enforcement:** Once a patch is deployed via the IDE, the fix is instantly enforced across the application. The vulnerable routes will automatically block future exploit payloads and display a green `🛡️ PATCHED` banner to attackers.
+### ⌨️ Professional "Fix Code" Workflow
+Remediation in CampusCare requires understanding the underlying vulnerability:
+1.  **Acknowledge:** Triage the event to earn initial detection points (+40 pts).
+2.  **Fix:** Launch the integrated **CampusCare IDE**.
+3.  **Modern Split-Pane IDE:**
+    *   **Vulnerable View (⛔):** See the exact lines of code (frontend or backend) that are causing the weakness.
+    *   **Patch Editor (✎):** Write the secure fix in the editor.
+    *   **Smart Validation:** The "Apply Fix" button only activates once you've actually modified the code. It prevents "empty" patches.
+    *   **Multi-File Remediation:** Complex vulnerabilities require patching multiple files (e.g., `login/route.ts` AND `logout/route.ts`) to completely close the vector.
+    *   **Hint System:** Use the 💡 Hint system to see secure coding patterns (e.g., parameterized queries or safe rendering).
+
+### 🛡️ Dynamic Patch Enforcement
+Once a patch is deployed via the IDE:
+*   **Global State Change:** The vulnerability is marked as "Patched" system-wide.
+*   **Active Interception:** The application's frontend will now actively intercept specific exploit payloads.
+*   **Feedback Loop:** Attackers will see a professional **🛡️ PATCHED** banner, and their malicious requests will be blocked.
+
 
 ---
 
