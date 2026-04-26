@@ -95,11 +95,15 @@ function initDb(db: Database.Database) {
   if (userCount === 0) {
     db.exec(`
       INSERT INTO users (username, password, role, email, full_name, class, section, admission_no) VALUES
-        ('admin',            'Admin@Campus2025', 'admin',   'admin@campuscare.local',     'System Administrator', NULL, NULL,  'ADM001'),
+        ('admin',            'Admin@Campus2025', 'admin',   'sysadmin.b7.internal@campuscare.local', 'System Administrator', NULL, NULL,  'ADM001'),
         ('principal',        'principal123',     'staff',   'principal@campuscare.local', 'Dr. R. Sharma',        NULL, NULL,  'STF001'),
         ('student1',         'pass1234',         'student', 'aryan.k@student.local',      'Aryan Kumar',          'XI', 'A',   'S2024001'),
         ('student2',         'mypassword',       'student', 'priya.m@student.local',      'Priya Mehta',          'X',  'B',   'S2024002'),
+        ('student3',         'qwertyuiop',       'student', 'rohan.s@student.local',      'Rohan Singh',          'XI', 'A',   'S2024003'),
+        ('student4',         'password123',      'student', 'aisha.p@student.local',      'Aisha Patel',          'XII','B',   'S2024004'),
+        ('student5',         'dragon123',        'student', 'karan.d@student.local',      'Karan Desai',          'IX', 'C',   'S2024005'),
         ('teacher1',         'teach@123',        'staff',   'rohit.v@staff.local',        'Mr. Rohit Verma',      NULL, NULL,  'STF002'),
+        ('teacher2',         'mathgenius',       'staff',   'sneha.g@staff.local',        'Ms. Sneha Gupta',      NULL, NULL,  'STF003'),
         ('ctf_hidden_user',  'FLAG_EASY_FOUND_IT','student','hidden@nowhere.local',       'CTF Test User',        'XII','C',   'S2024999');
     `);
   }
@@ -132,6 +136,9 @@ function initDb(db: Database.Database) {
         ('Welcome to CampusCare',         'This portal provides access to academic resources, notices, and student information.', 'admin',    0),
         ('Parent-Teacher Meeting',        'PTM scheduled for all classes on 15th April. Parents requested 9 AM–1 PM.',            'principal',0),
         ('Annual Sports Day',             'Sports day on 20th April. Register with your class teacher.',                          'teacher1', 0),
+        ('Library Books Due',             'All issued books must be returned to the library by 30th May to avoid late fees.',     'staff',    0),
+        ('Summer Camp Registration',      'Summer coding and robotics camp starts June 5th. Register via your dashboard.',        'teacher2', 0),
+        ('System Maintenance Scheduled',  'CampusCare will be down for scheduled maintenance this Sunday from 2 AM to 4 AM.',     'admin',    0),
         ('[INTERNAL] Admin Backup Creds', 'Emergency: admin / Admin@Campus2025 — DO NOT SHARE',                                  'admin',    1),
         ('Exam Schedule Released',        'Final exam timetable uploaded. Check your class schedule.',                            'teacher1', 0);
     `);
@@ -144,7 +151,9 @@ function initDb(db: Database.Database) {
       INSERT INTO assignments (title, subject, class, due_date, description) VALUES
         ('Chapter 5 – Recursion',   'Computer Science', 'XI',  '2026-05-10', 'Complete exercises 5.1–5.4 from NCERT.'),
         ('Essay on Climate Change', 'English',          'X',   '2026-05-08', '500 word essay on effects of climate change.'),
+        ('History Project – World War II', 'History',   'IX',  '2026-05-15', 'Prepare a 10-page project report on the major events of WWII.'),
         ('Integration Practice',    'Mathematics',      'XII', '2026-05-12', 'Solve worksheet problems distributed in class.'),
+        ('Physics Practical Record',       'Physics',   'XI',  '2026-05-20', 'Complete the practical record book for the recent optics experiments.'),
         ('Lab Report – Titration',  'Chemistry',        'XI',  '2026-05-09', 'Submit titration lab report with all calculations.');
     `);
   }
@@ -174,10 +183,12 @@ function initDb(db: Database.Database) {
   if (feedbackCount === 0) {
     db.exec(`
       INSERT INTO feedback (student_id, username, email, admission_no, content, status, admin_response) VALUES
-        (1, 'admin', 'admin@campuscare.local', 'ADM-0001', 'FLAG{1d0r_3xp0s3d_pr1v4t3_d4t4_420} — internal note: DB backup stored at /backup.sql', 'resolved', '<b>Resolved by admin.</b> <script>/* stored XSS bonus vector */</script>'),
+        (1, 'admin', 'sysadmin.b7.internal@campuscare.local', 'ADM-0001', 'FLAG{1d0r_3xp0s3d_pr1v4t3_d4t4_420} — internal note: DB backup stored at /backup.sql', 'resolved', '<b>Resolved by admin.</b> <script>/* stored XSS bonus vector */</script>'),
         (2, 'student01', 'stu01@campus.local', 'STU-1021', 'The canteen food quality has dropped significantly this semester.', 'pending', NULL),
         (3, 'student02', 'stu02@campus.local', 'STU-1034', 'Requesting a locker near Block C.', 'resolved', '<b>Locker assigned.</b>'),
-        (4, 'student03', 'stu03@campus.local', 'STU-1045', 'WiFi in the library is too slow during exam season.', 'pending', NULL);
+        (4, 'student03', 'stu03@campus.local', 'STU-1045', 'WiFi in the library is too slow during exam season.', 'pending', NULL),
+        (5, 'student04', 'stu04@campus.local', 'STU-1056', 'Can we have more vegetarian options in the cafeteria menu?', 'pending', NULL),
+        (6, 'student05', 'stu05@campus.local', 'STU-1067', 'The basketball court needs new nets before the inter-house tournament.', 'resolved', '<b>Nets have been ordered and will be installed next week.</b>');
     `);
   }
 }
