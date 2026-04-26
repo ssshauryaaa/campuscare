@@ -13,6 +13,8 @@ export type AttackType =
   | "xss_login"        // reflected XSS via login error message
   | "jwt_forge"        // JWT none-algorithm or weak secret forgery
   | "idor_profile"     // IDOR: reading another student's profile
+  | "idor_feedback"    // IDOR: reading another student's private feedback
+  | "xss_feedback"     // stored XSS via admin response in feedback
   | "open_redirect"    // ?next= param redirects to external URL
   | "session_fixation" // old JWT still valid after logout
   | "recon";           // sensitive info found (env, source comment, backup panel)

@@ -1,4 +1,4 @@
-import type { AttackType, Severity, LogEntry } from "@/types/defense";
+import type { LogEntry } from "@/types/defense";
 
 export const uid  = () => Math.random().toString(36).slice(2, 10).toUpperCase();
 export const rnd  = (a: number, b: number) => Math.floor(Math.random() * (b - a) + a);
@@ -180,6 +180,24 @@ export const ATTACK_TEMPLATES: AttackTemplate[] = [
     detail: "IDOR enumeration: incrementing profile IDs 1–20 to map all user accounts",
     endpoint: "/api/profile/[id]", method: "GET", statusCode: 200,
     payload: "Sequential requests: /api/profile/1, /2, /3 ... /20",
+  },
+
+  // ── IDOR — Feedback ─────────────────────────────────────────────────────────
+  {
+    type: "idor_feedback", severity: "high",
+    user: "FeedbackSniffer",
+    detail: "IDOR: Accessed admin's private feedback via /api/feedback?id=1 — sensitive flag exposed",
+    endpoint: "/api/feedback?id=1", method: "GET", statusCode: 200,
+    payload: "GET /api/feedback?id=1  (authenticated as random student)",
+  },
+
+  // ── XSS — Feedback Admin Response ───────────────────────────────────────────
+  {
+    type: "xss_feedback", severity: "critical",
+    user: "AdminXSS",
+    detail: "Stored XSS in feedback admin_response — executes when student views the feedback ticket",
+    endpoint: "/api/feedback", method: "POST", statusCode: 200,
+    payload: "admin_response=<img src=x onerror=alert(document.cookie)>",
   },
 
   // ── Open Redirect ───────────────────────────────────────────────────────────

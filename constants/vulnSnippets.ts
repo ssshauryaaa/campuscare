@@ -269,4 +269,49 @@ const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));`
       },
     ],
   },
+
+  // ── IDOR — Feedback ───────────────────────────────────────────────────────────
+  idor_feedback: {
+    title: "IDOR — Private Feedback Access",
+    description: "Any authenticated user can fetch any other user's private feedback by changing the ticket ID in the URL — no ownership check is performed.",
+    files: [
+      {
+        path: "app/api/feedback/route.ts",
+        label: "api/feedback/route.ts",
+        vulnerableSnippet: `  // VULNERABLE: no ownership check — any authenticated user can read any record
+  // Record ID=1 is seeded with admin's feedback containing the flag
+  const row = db.prepare(\`SELECT * FROM feedback WHERE id = ?\`).get(id);`,
+        fixHint: `// FIX: Verify requester owns the feedback or is admin
+  const row = db.prepare(
+    "SELECT id, content, status, admin_response FROM feedback WHERE id = ? AND (student_id = ? OR ? = 'admin')"
+  ).get(id, user.userId, user.role);`,
+      },
+    ],
+  },
+
+  // ── XSS — Feedback Admin Response ─────────────────────────────────────────────
+  xss_feedback: {
+    title: "Stored XSS — Feedback Admin Response",
+    description: "The admin response on a feedback ticket is rendered using dangerouslySetInnerHTML, executing any injected scripts.",
+    files: [
+      {
+        path: "app/feedback/page.tsx",
+        label: "feedback/page.tsx",
+        vulnerableSnippet: `            {/* Admin response rendered as HTML — secondary XSS vector */}
+            {result.admin_response && (
+              <div>
+                <strong>Admin Response:</strong>
+                <div dangerouslySetInnerHTML={{ __html: result.admin_response }} />
+              </div>
+            )}`,
+        fixHint: `            {/* FIX: Render admin response safely without innerHTML */}
+            {result.admin_response && (
+              <div>
+                <strong>Admin Response:</strong>
+                <div>{result.admin_response}</div>
+              </div>
+            )}`,
+      },
+    ],
+  },
 };

@@ -77,6 +77,17 @@ function initDb(db: Database.Database) {
       action_token TEXT,
       created_at   TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER,
+      username TEXT,
+      email TEXT,
+      admission_no TEXT,
+      content TEXT,
+      status TEXT DEFAULT 'pending',
+      admin_response TEXT
+    );
   `);
 
   // ── Seed users ────────────────────────────────────────────────────────────
@@ -155,6 +166,18 @@ function initDb(db: Database.Database) {
     db.exec(`
       INSERT INTO verification_pins (user_id, pin, action, action_token) VALUES
         (1, '4829', 'admin_override', 'BREACH{n0_r4t3_l1m1t_0tp_byp4ss}');
+    `);
+  }
+
+  // ── Seed feedback ─────────────────────────────────────────────────────────
+  const feedbackCount = (db.prepare("SELECT COUNT(*) as c FROM feedback").get() as any).c;
+  if (feedbackCount === 0) {
+    db.exec(`
+      INSERT INTO feedback (student_id, username, email, admission_no, content, status, admin_response) VALUES
+        (1, 'admin', 'admin@campuscare.local', 'ADM-0001', 'FLAG{1d0r_3xp0s3d_pr1v4t3_d4t4_420} — internal note: DB backup stored at /backup.sql', 'resolved', '<b>Resolved by admin.</b> <script>/* stored XSS bonus vector */</script>'),
+        (2, 'student01', 'stu01@campus.local', 'STU-1021', 'The canteen food quality has dropped significantly this semester.', 'pending', NULL),
+        (3, 'student02', 'stu02@campus.local', 'STU-1034', 'Requesting a locker near Block C.', 'resolved', '<b>Locker assigned.</b>'),
+        (4, 'student03', 'stu03@campus.local', 'STU-1045', 'WiFi in the library is too slow during exam season.', 'pending', NULL);
     `);
   }
 }
