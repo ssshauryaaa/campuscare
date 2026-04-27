@@ -12,29 +12,29 @@ import {
 interface User { id: number; username: string; role: string; }
 
 const NAV_ITEMS = [
-  { href: "/dashboard",   label: "Dashboard",        icon: LayoutDashboard },
-  { href: "/notices",     label: "Notices",           icon: Bell            },
-  { href: "/search",      label: "Search Directory",  icon: Search          },
-  { href: "/documents",   label: "Campus Documents",  icon: FileText        },
-  { href: "/assignments", label: "Assignments",       icon: BookOpen        },
-  { href: "/resources",   label: "Resources",         icon: Library         },
-  { href: "/jwt-debug",   label: "JWT Debugger",      icon: KeyRound        },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/notices", label: "Notices", icon: Bell },
+  { href: "/search", label: "Search Directory", icon: Search },
+  { href: "/documents", label: "Campus Documents", icon: FileText },
+  { href: "/assignments", label: "Assignments", icon: BookOpen },
+  { href: "/resources", label: "Resources", icon: Library },
+  { href: "/jwt-debug", label: "JWT Debugger", icon: KeyRound },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
-  "/":            "Home",
-  "/dashboard":   "Dashboard",
-  "/notices":     "Notice Board",
-  "/documents":   "Campus Documents",
-  "/search":      "Student Directory",
+  "/": "Home",
+  "/dashboard": "Dashboard",
+  "/notices": "Notice Board",
+  "/documents": "Campus Documents",
+  "/search": "Student Directory",
   "/assignments": "Assignments",
-  "/resources":   "Resources",
-  "/jwt-debug":   "JWT Debugger",
-  "/admin":       "Admin Console",
+  "/resources": "Resources",
+  "/jwt-debug": "JWT Debugger",
+  // "/admin":       "Admin Console",
 };
 
 export default function Navbar() {
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [hasCritical, setHasCritical] = useState(false);
@@ -131,7 +131,7 @@ export default function Navbar() {
             );
           })}
 
-          {user?.role === "admin" && (
+          {/* {user?.role === "admin" && (
             <Link
               href="/admin"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2"
@@ -144,9 +144,9 @@ export default function Navbar() {
               <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#ef4444" }} />
               <span>Admin Panel</span>
             </Link>
-          )}
+          )} */}
 
-          {(user?.role === "admin" || user?.role === "staff") && (
+          {/* {(user?.role === "admin" || user?.role === "staff") && (
             <Link
               href="/defense"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2 relative group"
@@ -159,10 +159,10 @@ export default function Navbar() {
               <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: pathname === "/defense" ? "var(--cc-orange)" : "#9ca3af" }} />
               <span className="truncate">Defense Console</span>
               {hasCritical && (
-                <div style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", width:8, height:8, borderRadius:"50%", background:"#ef4444", boxShadow:"0 0 0 2px #fff", animation:"pulse 2s infinite" }} />
+                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", width: 8, height: 8, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 0 2px #fff", animation: "pulse 2s infinite" }} />
               )}
             </Link>
-          )}
+          )} */}
         </nav>
 
         {/* User Section */}
@@ -187,7 +187,7 @@ export default function Navbar() {
                   className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5"
                   style={{
                     background: user.role === "admin" ? "rgba(220,38,38,0.12)" : "rgba(245,130,10,0.12)",
-                    color:      user.role === "admin" ? "#dc2626" : "var(--cc-orange)",
+                    color: user.role === "admin" ? "#dc2626" : "var(--cc-orange)",
                   }}
                 >
                   {user.role}

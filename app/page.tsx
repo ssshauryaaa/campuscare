@@ -166,7 +166,7 @@ export default function Home() {
         {/* Info Strip */}
         <div className="stagger-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 40 }}>
           {[
-            { label: "Current Session", value: "2025–26", icon: Activity, color: "#3b82f6" },
+            { label: "Current Session", value: "2026-27", icon: Activity, color: "#3b82f6" },
             { label: "Affiliation", value: "CBSE #1234", icon: Trophy, color: "#f59e0b" },
             { label: "Curriculum", value: "Integrated Program", icon: Library, color: "#8b5cf6" },
           ].map((item, i) => (
