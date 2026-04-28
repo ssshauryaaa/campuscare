@@ -1,254 +1,261 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { AttackType } from "@/types/defense";
 import { sans, mono, TYPE_LABELS, PATCH_POINTS } from "@/constants/campusTheme";
-import { useAttackSimulator, useTimer, useToast } from "@/hooks/useCampusDefense";
-import { LogRow } from "@/components/defense/LogRow";
-import { ThreatInspector } from "@/components/defense/ThreatInspector";
-import { ScoreLedger } from "@/components/defense/ScoreLedger";
+import { useAttackSimulator, useToast } from "@/hooks/useCampusDefense";
 import { addPatchedVuln } from "@/lib/logAttack";
-import { VulnerabilityScanner } from "@/components/defense/VulnerabilityScanner";
+import { LogsTab } from "@/components/defense/LogsTab";
+import { InvestigateTab } from "@/components/defense/InvestigateTab";
+import { ScanTab } from "@/components/defense/ScanTab";
 
-
+type Tab = "logs" | "investigate" | "scan";
 
 export default function DefensePage() {
+  const [activeTab, setActiveTab] = useState<Tab>("logs");
   const [isRunning, setIsRunning] = useState(true);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [filterTab, setFilterTab] = useState<"all" | "acknowledged" | "patched">("all");
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [score, setScore] = useState(0);
-  const [detectScore, setDetectScore] = useState(0);
-  const [scoreHistory, setScoreHistory] = useState<{ points: number; ts: number; detail: string; type: AttackType }[]>([]);
   const [patchedTypes, setPatchedTypes] = useState<Set<AttackType>>(new Set());
-  const [scanOpen, setScanOpen] = useState(false);
-  const [scanUsed, setScanUsed] = useState(false);
+  const [, showToast] = useToast();
 
-  const [toast, showToast] = useToast();
   const { logs, setLogs, alertFlash } = useAttackSimulator(patchedTypes, isRunning);
 
-  const selectedLog = logs.find(l => l.id === selected);
+  // ── Stats ────────────────────────────────────────────────────────────────────
+  const critCount = logs.filter(l => l.severity === "critical" && !patchedTypes.has(l.type)).length;
+  const pendingInvestigate = [...new Set(
+    logs.filter(l => l.detected && !patchedTypes.has(l.type)).map(l => l.type)
+  )].length;
 
-  // Check if scan has already been started (localStorage)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setScanUsed(!!localStorage.getItem("campuscare_scan_startTs"));
-    }
-  }, []);
-
-  function handleScanComplete(pts: number) {
-    setScore(s => s + pts);
-    setScoreHistory(h => [{ points: pts, ts: Date.now(), detail: "Active vulnerability scan completed", type: "recon" as AttackType }, ...h].slice(0, 50));
-    showToast(`🔍 Scan complete — ${pts} bonus pts awarded!`);
-  }
-
-  function openScanner() {
-    setScanUsed(true);
-    setScanOpen(true);
-  }
-
-  // ── Acknowledge ─────────────────────────────────────────────────────────────
+  // ── Acknowledge ──────────────────────────────────────────────────────────────
   function acknowledge(logId: string) {
     const log = logs.find(l => l.id === logId);
     if (!log || log.detected) { showToast("Already acknowledged", false); return; }
     setLogs(prev => prev.map(l => l.id === logId ? { ...l, detected: true } : l));
-    setDetectScore(s => s + 40);
     setScore(s => s + 40);
-    setScoreHistory(h => [{ points: 40, ts: Date.now(), detail: `${TYPE_LABELS[log.type]} detected`, type: log.type }, ...h].slice(0, 50));
-    showToast("Threat acknowledged +40 pts — patch the code to claim full points");
+    showToast("Threat acknowledged +40 pts — investigate it to patch");
   }
 
-  // ── Mark as patched ─────────────────────────────────────────────────────────
+  // ── Mark patched ─────────────────────────────────────────────────────────────
   function markPatched(type: AttackType) {
     if (patchedTypes.has(type)) { showToast("Already patched", false); return; }
-    // Write to localStorage so vulnerable pages can read and block the exploit
     addPatchedVuln(type);
     setPatchedTypes(prev => new Set([...prev, type]));
     setLogs(prev => prev.map(l => l.type === type ? { ...l, patched: true } : l));
     const pts = PATCH_POINTS[type];
     setScore(s => s + pts);
-    setScoreHistory(h => [{ points: pts, ts: Date.now(), detail: `${TYPE_LABELS[type]} patched globally`, type }, ...h].slice(0, 50));
     showToast(`✓ ${TYPE_LABELS[type]} patched — +${pts} pts`);
   }
 
-  // ── Derived counts ───────────────────────────────────────────────────────────
-  const critCount = logs.filter(l => l.severity === "critical" && !patchedTypes.has(l.type)).length;
-  const tabCounts = {
-    all: logs.length,
-    acknowledged: logs.filter(l => l.detected && !patchedTypes.has(l.type)).length,
-    patched: logs.filter(l => patchedTypes.has(l.type)).length,
-  };
-  const filteredLogs = logs.filter(l => {
-    if (filterTab === "acknowledged") return l.detected && !patchedTypes.has(l.type);
-    if (filterTab === "patched") return patchedTypes.has(l.type);
-    return true;
-  });
+  // ── Scan complete ─────────────────────────────────────────────────────────────
+  function handleScanComplete(pts: number) {
+    setScore(s => s + pts);
+    showToast(`🔍 Scan complete — +${pts} bonus pts`);
+  }
+
+  const TABS: { id: Tab; label: string; icon: string; badge?: number }[] = [
+    { id: "logs",        label: "Live Logs",   icon: "📡", badge: logs.filter(l => !l.detected && !patchedTypes.has(l.type)).length || undefined },
+    { id: "investigate", label: "Investigate", icon: "🔍", badge: pendingInvestigate || undefined },
+    { id: "scan",        label: "Vuln Scan",   icon: "🛡️" },
+  ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f7fa", fontFamily: sans, color: "#374151", display: "flex", flexDirection: "column", fontSize: 13 }}>
+    <div style={{ minHeight: "100vh", height: "100vh", background: "#f5f7fa", fontFamily: sans, color: "#374151", display: "flex", flexDirection: "column", fontSize: 13, overflow: "hidden" }}>
 
-      {/* Critical flash overlay */}
+      {/* Critical flash */}
       {alertFlash && (
         <div style={{ position: "fixed", inset: 0, border: "3px solid #dc2626", pointerEvents: "none", zIndex: 9999, animation: "redflash 0.5s ease-out forwards" }} />
       )}
 
-      {/* ── TOP HEADER ────────────────────────────────────────────────────── */}
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 28px", height: 60,
+        padding: "0 28px", height: 56,
         background: "#1a3c6e", flexShrink: 0, gap: 16,
       }}>
-        {/* Left: branding + badges */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-
-          {/* CampusCare logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* Shield icon */}
-            <div style={{ width: 28, height: 28, background: "rgba(245,130,10,0.2)", border: "1px solid rgba(245,130,10,0.4)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#f5820a" />
-              </svg>
+        {/* Branding */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 30, height: 30, background: "rgba(245,130,10,0.18)", border: "1px solid rgba(245,130,10,0.4)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#f5820a" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-.01em" }}>
+              CampusCare <span style={{ color: "#f5820a" }}>Defense</span>
             </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffff", letterSpacing: "-.01em" }}>
-                CampusCare <span style={{ color: "#f5820a" }}>Defense</span>
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>Blue Team Console · Breach@trix</div>
-            </div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Blue Team Console · Breach@trix</div>
           </div>
 
-          {/* Critical alert badge */}
           {critCount > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 6, padding: "3px 10px" }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.2s infinite" }} />
               <span style={{ fontSize: 10, color: "#fca5a5", fontWeight: 700, letterSpacing: ".08em" }}>{critCount} CRITICAL ACTIVE</span>
             </div>
           )}
-
-          {/* Patched type badges */}
-          {[...patchedTypes].map(t => (
-            <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(245,130,10,0.15)", border: "1px solid rgba(245,130,10,0.3)", borderRadius: 6, padding: "3px 10px" }}>
-              <span style={{ fontSize: 10, color: "#f5820a", fontWeight: 700, letterSpacing: ".06em" }}>✓ {TYPE_LABELS[t].split(" ")[0]}</span>
-            </div>
-          ))}
         </div>
 
-        {/* Right: score + uptime + controls */}
+        {/* Right: score + controls */}
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {[...patchedTypes].map(t => (
+            <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 6, padding: "3px 10px" }}>
+              <span style={{ fontSize: 10, color: "#4ade80", fontWeight: 700 }}>✓ {TYPE_LABELS[t].split(" ")[0]}</span>
+            </div>
+          ))}
+
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: ".1em", marginBottom: 1 }}>BLUE TEAM SCORE</div>
             <div style={{ fontSize: 24, fontWeight: 800, color: "#f5820a", lineHeight: 1, letterSpacing: "-.03em", fontFamily: mono }}>{score.toLocaleString()}</div>
           </div>
 
           <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
-          <div style={{ display: "flex", gap: 8 }}>
-            {/* Vulnerability Scanner — one-time use */}
-            <button
-              onClick={scanUsed ? () => setScanOpen(true) : openScanner}
-              title={scanUsed ? "View scan results" : "Run one-time vulnerability scan (2 min)"}
-              style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 14px", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, background: scanUsed ? "rgba(96,165,250,0.15)" : "rgba(245,130,10,0.15)", border: `1px solid ${scanUsed ? "rgba(96,165,250,0.4)" : "rgba(245,130,10,0.4)"}`, color: scanUsed ? "#93c5fd" : "#f5820a" }}
-            >
-              🔍 {scanUsed ? "VIEW SCAN" : "RUN SCAN"}
-              {!scanUsed && <span style={{ fontSize: 9, background: "rgba(245,130,10,0.2)", border: "1px solid rgba(245,130,10,0.3)", padding: "1px 5px", borderRadius: 3, letterSpacing: ".06em" }}>1× USE</span>}
-            </button>
-            <button onClick={() => setLogs([])} style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 12px", borderRadius: 6, cursor: "pointer", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.4)" }}>CLEAR</button>
-            <button onClick={() => setIsRunning(v => !v)} style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "6px 14px", borderRadius: 6, cursor: "pointer", ...(isRunning ? { background: "rgba(245,130,10,0.15)", border: "1px solid rgba(245,130,10,0.4)", color: "#f5820a" } : { background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.4)", color: "#4ade80" }) }}>
-              {isRunning ? "⏸ PAUSE" : "▶ RESUME"}
-            </button>
-          </div>
+
+          <button
+            onClick={() => setIsRunning(v => !v)}
+            style={{
+              fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
+              padding: "6px 14px", borderRadius: 6, cursor: "pointer",
+              ...(isRunning
+                ? { background: "rgba(245,130,10,0.15)", border: "1px solid rgba(245,130,10,0.4)", color: "#f5820a" }
+                : { background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.4)", color: "#4ade80" }),
+            }}
+          >
+            {isRunning ? "⏸ PAUSE" : "▶ RESUME"}
+          </button>
         </div>
       </header>
 
-      {/* ── MAIN LAYOUT ────────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", flex: 1, minHeight: 0, height: "calc(100vh - 60px)" }}>
+      {/* ── SUB-NAV ─────────────────────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 2,
+        padding: "0 28px", height: 46,
+        background: "#0f2347", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0,
+      }}>
+        {TABS.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                fontFamily: sans, fontSize: 12, fontWeight: 700, letterSpacing: ".05em",
+                padding: "8px 18px", borderRadius: 7, cursor: "pointer",
+                border: active ? "1px solid rgba(245,130,10,0.35)" : "1px solid transparent",
+                background: active ? "rgba(245,130,10,0.12)" : "transparent",
+                color: active ? "#f5820a" : "rgba(255,255,255,0.4)",
+                display: "flex", alignItems: "center", gap: 8,
+                transition: "all .15s",
+              }}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+              {tab.badge != null && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800,
+                  background: active ? "rgba(245,130,10,0.25)" : "rgba(239,68,68,0.25)",
+                  color: active ? "#f5820a" : "#f87171",
+                  border: `1px solid ${active ? "rgba(245,130,10,0.4)" : "rgba(239,68,68,0.4)"}`,
+                  borderRadius: 10, padding: "1px 7px", minWidth: 20, textAlign: "center",
+                }}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
 
-        {/* Log list (left) */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: "1px solid #e2e8f0", minWidth: 0 }}>
-
-          {/* Filter tabs */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: "1px solid #e2e8f0", background: "#ffffff", flexShrink: 0 }}>
-            <div style={{ display: "flex" }}>
-              {(["all", "acknowledged", "patched"] as const).map(tab => {
-                const labels = { all: "All Events", acknowledged: "Acknowledged", patched: "Patched" };
-                const active = filterTab === tab;
-                return (
-                  <button key={tab} onClick={() => setFilterTab(tab)} style={{
-                    fontFamily: sans, background: "transparent", border: "none",
-                    borderBottom: `2px solid ${active ? "#1a3c6e" : "transparent"}`,
-                    padding: "14px 18px", fontSize: 11, fontWeight: 700, letterSpacing: ".07em",
-                    color: active ? "#1a3c6e" : "#9ca3af", cursor: "pointer", transition: "all .15s",
-                    display: "flex", alignItems: "center", gap: 7,
-                  }}>
-                    {labels[tab]}
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: active ? "rgba(26,60,110,0.1)" : "#f3f4f6", color: active ? "#1a3c6e" : "#9ca3af" }}>
-                      {tabCounts[tab]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: isRunning ? "#16a34a" : "#9ca3af", display: "flex", alignItems: "center", gap: 5 }}>
-              {isRunning && <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#16a34a", animation: "pulse 1.2s infinite" }} />}
-              {isRunning ? "LIVE MONITORING" : "PAUSED"}
-            </span>
+        {/* Divider + acknowledge tip for logs tab */}
+        {activeTab === "logs" && (
+          <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
+            Click any log row → acknowledge it (+40 pts), then go to <strong style={{ color: "rgba(255,255,255,0.4)" }}>Investigate</strong> to view the code and patch
           </div>
-
-          {/* Column headers */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "80px 90px 180px 1fr 110px",
-            padding: "9px 24px", background: "#f9fafb", borderBottom: "1px solid #e2e8f0",
-            fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#9ca3af", flexShrink: 0,
-          }}>
-            <span>TIME</span><span>SEVERITY</span><span>ATTACK TYPE</span><span>ATTACKER / DETAIL</span><span style={{ textAlign: "right" }}>STATUS</span>
+        )}
+        {activeTab === "investigate" && (
+          <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
+            View full source files, then open the Patch IDE to fix the vulnerability and claim points
           </div>
-
-          {/* Log rows */}
-          <div style={{ flex: 1, overflowY: "auto", background: "#ffffff" }}>
-            {filteredLogs.length === 0 && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 200, gap: 10 }}>
-                <div style={{ fontSize: 28, color: "#e5e7eb" }}>◎</div>
-                <div style={{ fontSize: 12, color: "#d1d5db", fontWeight: 600, letterSpacing: ".06em", fontFamily: sans }}>
-                  {filterTab === "acknowledged" ? "NO ACKNOWLEDGED THREATS" : filterTab === "patched" ? "NO PATCHED VULNS YET" : "NO EVENTS YET"}
-                </div>
-              </div>
-            )}
-            {filteredLogs.map(log => (
-              <LogRow key={log.id} log={log} isSelected={selected === log.id} patchedTypes={patchedTypes} onSelect={id => setSelected(prev => prev === id ? null : id)} />
-            ))}
-          </div>
-        </div>
-
-        {/* Right sidebar: Inspector + Ledger */}
-        <div style={{ width: 420, flexShrink: 0, display: "flex", flexDirection: "column", background: "#ffffff", borderLeft: "1px solid #e2e8f0" }}>
-          <div style={{ padding: "14px 22px", borderBottom: "1px solid #e2e8f0", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f9fafb" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "#6b7280" }}>THREAT INSPECTOR</span>
-            {selectedLog && <span style={{ fontSize: 10, color: "#9ca3af", fontFamily: mono }}>#{selectedLog.id}</span>}
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-            <ThreatInspector selectedLog={selectedLog} patchedTypes={patchedTypes} toast={toast} onAcknowledge={acknowledge} onMarkPatched={markPatched} />
-          </div>
-          <ScoreLedger scoreHistory={scoreHistory} />
-        </div>
+        )}
       </div>
 
-      {/* Vulnerability Scanner modal */}
-      {scanOpen && (
-        <VulnerabilityScanner
-          patchedTypes={patchedTypes}
-          onClose={() => setScanOpen(false)}
-          onScanComplete={handleScanComplete}
-        />
-      )}
+      {/* ── TAB CONTENT ─────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+
+        {activeTab === "logs" && (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            {/* Mini inspector bar when a log is selected */}
+            {selectedLogId && (() => {
+              const log = logs.find(l => l.id === selectedLogId);
+              if (!log) return null;
+              const isPatched = patchedTypes.has(log.type);
+              const canAck = !log.detected && !isPatched;
+              return (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "10px 24px", background: "#fff", borderBottom: "1px solid #e2e8f0",
+                  flexShrink: 0,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a3c6e", marginBottom: 2 }}>{log.user} — {log.detail}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: mono }}>{log.ip} → {log.endpoint}</div>
+                  </div>
+                  {isPatched ? (
+                    <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>✓ PATCHED</span>
+                  ) : canAck ? (
+                    <button
+                      onClick={() => acknowledge(selectedLogId)}
+                      style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, padding: "7px 16px", borderRadius: 7, cursor: "pointer", background: "rgba(26,60,110,0.08)", border: "1px solid rgba(26,60,110,0.2)", color: "#1a3c6e" }}
+                    >
+                      ◉ Acknowledge +40 pts
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab("investigate")}
+                      style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, padding: "7px 16px", borderRadius: 7, cursor: "pointer", background: "rgba(245,130,10,0.08)", border: "1px solid rgba(245,130,10,0.3)", color: "#f5820a" }}
+                    >
+                      ⚡ Investigate & Patch →
+                    </button>
+                  )}
+                  <button onClick={() => setSelectedLogId(null)} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+                </div>
+              );
+            })()}
+            <LogsTab
+              logs={logs}
+              setLogs={setLogs}
+              patchedTypes={patchedTypes}
+              selected={selectedLogId}
+              onSelect={id => setSelectedLogId(prev => prev === id ? null : id)}
+              isRunning={isRunning}
+            />
+          </div>
+        )}
+
+        {activeTab === "investigate" && (
+          <InvestigateTab
+            logs={logs}
+            patchedTypes={patchedTypes}
+            onMarkPatched={markPatched}
+            onAcknowledge={acknowledge}
+          />
+        )}
+
+        {activeTab === "scan" && (
+          <ScanTab
+            patchedTypes={patchedTypes}
+            onScanComplete={handleScanComplete}
+          />
+        )}
+      </div>
 
       <style>{`
         @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500;700&display=swap");
         * { box-sizing: border-box; }
-        body { margin: 0; background: #f5f7fa; }
-        ::-webkit-scrollbar { width: 5px; }
+        body { margin: 0; background: #f5f7fa; overflow: hidden; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
         button:focus { outline: none; }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
-        @keyframes fadeup { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }
         @keyframes redflash { 0% { opacity:1 } 100% { opacity:0 } }
       `}</style>
     </div>

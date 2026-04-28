@@ -472,3 +472,424 @@ export async function GET(req: NextRequest) {
     ],
   },
 };
+
+// ── Full source code for each vulnerability ───────────────────────────────────
+// These are the complete contents of the real vulnerable files, shown in the
+// FullFileViewer so defenders can read the full context around each vulnerability.
+export const FULL_SOURCES: Partial<Record<AttackType, string[]>> = {
+
+  sqli_login: [
+    // index 0 = app/login/page.tsx (frontend — not the real vuln but context)
+    `// app/login/page.tsx  (frontend — the POST is fine; vuln is in the route)
+"use client";
+// The form collects username + password and POSTs them as JSON.
+// The REAL vulnerability is in the backend route handler below.
+const res = await fetch("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username, password }),
+});`,
+    // index 1 = app/api/auth/login/route.ts
+    `// app/api/auth/login/route.ts
+// VULNERABILITY: Raw string interpolation into SQL → SQLi auth bypass
+// admin'-- in username field skips password check entirely
+
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { signToken } from "@/lib/auth";
+
+export async function POST(req: NextRequest) {
+  const { username, password } = await req.json();
+
+  if (!username || !password) {
+    return NextResponse.json({ error: "Username and password required" }, { status: 400 });
+  }
+
+  const db = getDb();
+
+  // VULNERABILITY: Direct string interpolation — no prepared statement
+  // Payload: username = admin'--   → logs in as admin without password
+  // Payload: username = ' OR 1=1-- → logs in as first user in DB
+  const query = \`SELECT * FROM users WHERE username = '\${username}' AND password = '\${password}'\`;
+
+  let user: any;
+  try {
+    user = db.prepare(query).get();
+  } catch (e: any) {
+    // VULNERABILITY: Raw SQL error + full query leaked to client
+    return NextResponse.json({ error: \`Database error: \${e.message}\`, query }, { status: 500 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: "Invalid username or password", debug_query: query }, { status: 401 });
+  }
+
+  const token = signToken({ id: user.id, username: user.username, role: user.role, email: user.email, full_name: user.full_name });
+
+  const res = NextResponse.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
+
+  // VULNERABILITY: HttpOnly not set → token readable by JS
+  res.cookies.set("token", token, { httpOnly: false, path: "/", maxAge: 60 * 60 * 24, sameSite: "lax" });
+
+  return res;
+}`,
+  ],
+
+  sqli_search: [
+    `// app/api/search/route.ts
+// VULNERABILITY: q param interpolated directly into SQL
+// UNION attack: %' UNION SELECT flag_value,flag_name,difficulty,points,hint FROM flags--
+
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { getSessionUserFromRequest } from "@/lib/auth";
+
+export async function GET(req: NextRequest) {
+  const user = getSessionUserFromRequest(req);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const query = req.nextUrl.searchParams.get("q") ?? "";
+  const classFilter = req.nextUrl.searchParams.get("class") ?? "";
+
+  const db = getDb();
+
+  let sql = \`SELECT id, full_name, class, section, admission_no FROM users WHERE (full_name LIKE '%\${query}%' OR username LIKE '%\${query}%')\`;
+
+  // VULNERABILITY: class filter also injected raw
+  if (classFilter) {
+    sql += \` AND class = '\${classFilter}'\`;
+  }
+
+  try {
+    const results = db.prepare(sql).all();
+    return NextResponse.json({ results, query, class_filter: classFilter });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message, query }, { status: 500 });
+  }
+}`,
+  ],
+
+  sqli_profile: [
+    `// app/api/profile/[id]/route.ts
+// VULNERABILITY: IDOR — no authorization check, any user can fetch any profile
+
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { getSessionUserFromRequest } from "@/lib/auth";
+
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const user = getSessionUserFromRequest(req);
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+
+  if (!id || isNaN(Number(id))) {
+    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+  }
+
+  const db = getDb();
+
+  let profile: any;
+  try {
+    // VULNERABILITY: id from URL path injected directly into query
+    profile = db
+      .prepare(
+        \`SELECT id, username, email, full_name, class, section, admission_no, role FROM users WHERE id = \${id}\`
+      )
+      .get();
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+
+  if (!profile) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ profile });
+}`,
+  ],
+
+  sqli_class: [
+    `// app/api/search/route.ts  (same file as sqli_search)
+// VULNERABILITY: class filter parameter injected raw into SQL
+
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { getSessionUserFromRequest } from "@/lib/auth";
+
+export async function GET(req: NextRequest) {
+  const user = getSessionUserFromRequest(req);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const query = req.nextUrl.searchParams.get("q") ?? "";
+  const classFilter = req.nextUrl.searchParams.get("class") ?? "";
+  const db = getDb();
+
+  let sql = \`SELECT id, full_name, class, section, admission_no FROM users WHERE (full_name LIKE '%\${query}%' OR username LIKE '%\${query}%')\`;
+
+  // VULNERABILITY: class filter also injected raw into SQL string
+  if (classFilter) {
+    sql += \` AND class = '\${classFilter}'\`;
+  }
+
+  try {
+    const results = db.prepare(sql).all();
+    return NextResponse.json({ results, query, class_filter: classFilter });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message, query }, { status: 500 });
+  }
+}`,
+  ],
+
+  jwt_forge: [
+    `// lib/auth.ts
+// VULNERABILITY: Weak JWT secret + accepts 'none' algorithm
+
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+
+// VULNERABILITY: "secret" is in rockyou.txt — easily brute-forced with hashcat
+export const JWT_SECRET = process.env.JWT_SECRET || "secret";
+
+export interface TokenPayload {
+  id: number;
+  username: string;
+  role: string;
+  email: string;
+  full_name: string;
+  iat?: number;
+  exp?: number;
+}
+
+export function signToken(payload: Omit<TokenPayload, "iat" | "exp">): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+}
+
+export function verifyToken(token: string): TokenPayload | null {
+  try {
+    // VULNERABILITY: explicitly allows 'none' algorithm
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256", "none"],
+    }) as TokenPayload;
+  } catch {
+    return null;
+  }
+}
+
+// For use in Server Components / Route Handlers
+export async function getSessionUser(): Promise<TokenPayload | null> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    if (!token) return null;
+    return verifyToken(token);
+  } catch {
+    return null;
+  }
+}
+
+export function getSessionUserFromRequest(req: Request): TokenPayload | null {
+  try {
+    const cookieHeader = req.headers.get("cookie") || "";
+    const cookieMap: Record<string, string> = {};
+    cookieHeader.split(";").forEach((part) => {
+      const eqIdx = part.indexOf("=");
+      if (eqIdx === -1) return;
+      const key = part.slice(0, eqIdx).trim();
+      let val = part.slice(eqIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      try { val = decodeURIComponent(val); } catch { /* already plain */ }
+      cookieMap[key] = val;
+    });
+    const token = cookieMap["token"];
+    if (!token) return null;
+    return verifyToken(token);
+  } catch {
+    return null;
+  }
+}`,
+  ],
+
+  session_fixation: [
+    `// app/api/auth/login/route.ts
+// VULNERABILITY: HttpOnly not set → token readable by JS → can be stolen via XSS
+
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import { signToken } from "@/lib/auth";
+
+export async function POST(req: NextRequest) {
+  const { username, password } = await req.json();
+  const db = getDb();
+  const query = \`SELECT * FROM users WHERE username = '\${username}' AND password = '\${password}'\`;
+  const user: any = db.prepare(query).get();
+
+  if (!user) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  }
+
+  const token = signToken({ id: user.id, username: user.username, role: user.role, email: user.email, full_name: user.full_name });
+  const res = NextResponse.json({ success: true });
+
+  // VULNERABILITY: HttpOnly not set → token readable via document.cookie
+  res.cookies.set("token", token, {
+    httpOnly: false,  // ← attacker can read via document.cookie
+    path: "/",
+    maxAge: 60 * 60 * 24,
+    sameSite: "lax",
+  });
+
+  return res;
+}`,
+    `// app/api/auth/logout/route.ts
+// VULNERABILITY: No server-side token blocklist
+// Clearing the cookie doesn't invalidate the token itself
+// A copied token can be replayed until it expires (24h)
+
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const res = NextResponse.json({ success: true });
+  // Only clears client cookie — the JWT itself is still cryptographically valid
+  res.cookies.set("token", "", { maxAge: 0, path: "/" });
+  return res;
+}`,
+  ],
+
+  idor_feedback: [
+    `// app/api/feedback/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+import jwt from "jsonwebtoken";
+
+// POST — submit feedback (legitimate, authenticated)
+export async function POST(req: NextRequest) {
+  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let user: { userId: number; username: string; email: string; admission_no: string; role?: string };
+  try {
+    user = jwt.verify(token, process.env.JWT_SECRET || "secret") as any;
+  } catch {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  const { content } = await req.json();
+  const db = getDb();
+  const result = db.prepare(
+    \`INSERT INTO feedback (student_id, username, email, admission_no, content, status, admin_response)
+     VALUES (?, ?, ?, ?, ?, 'pending', NULL)\`
+  ).run(user.userId, user.username, user.email, user.admission_no, content);
+
+  return NextResponse.json({ id: result.lastInsertRowid });
+}
+
+// GET — fetch feedback by ID
+// VULNERABLE: checks only that user is logged in, NOT that they own the record
+export async function GET(req: NextRequest) {
+  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value;
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET || "secret");
+  } catch {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+
+  const db = getDb();
+  // VULNERABLE: no ownership check — any authenticated user can read any record
+  // Record ID=1 is seeded with admin's feedback containing the flag
+  const row = db.prepare(\`SELECT * FROM feedback WHERE id = ?\`).get(id);
+
+  if (!row) {
+    return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+  }
+
+  // VULNERABLE: returns entire row including sensitive fields
+  return NextResponse.json(row);
+}`,
+  ],
+
+  recon: [
+    `// app/page.tsx  (landing page — contains exposed developer comments)
+// VULNERABILITY: Admin credentials and DB path exposed in HTML source
+
+/* =====================================================
+   Developer Notes — TODO: REMOVE BEFORE GO-LIVE
+   =====================================================
+   Admin panel: /admin
+   Admin creds backup: admin / Admin@Campus2025
+   Flag: BREACH{s0urce_c0de_n3v3r_li3s}
+   DB location: ./campus.db
+   Secrets: see /.env
+   JWT_SECRET is set to "secret" for now — change this!
+   =====================================================
+*/
+
+// Run: curl http://localhost:3000 | grep -i "admin\\|password\\|secret\\|flag"`,
+    `// app/api/env-file/route.ts
+// Simulates a misconfigured server that accidentally serves the .env file publicly
+// Reachable via /.env due to next.config.ts rewrite rule
+
+import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+
+export async function GET() {
+  const envPath = path.join(process.cwd(), ".env");
+  const content = fs.readFileSync(envPath, "utf-8");
+  return new NextResponse(content, {
+    headers: { "Content-Type": "text/plain" },
+  });
+}`,
+  ],
+
+  lfi_documents: [
+    `// app/api/documents/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const file = searchParams.get("file");
+
+  if (!file) {
+    return NextResponse.json({ error: "No file specified" }, { status: 400 });
+  }
+
+  try {
+    // VULNERABILITY: Directory traversal possible via unsanitized file parameter
+    // Payload: ?file=../../../../.env  or  ?file=../../../lib/auth.ts
+    const targetPath = path.join(process.cwd(), "public", "documents", file);
+
+    if (!fs.existsSync(targetPath)) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    const content = fs.readFileSync(targetPath, "utf-8");
+
+    return new NextResponse(content, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error: any) {
+    console.error("LFI Read Error:", error.message);
+    return NextResponse.json({ error: "Failed to read file", detail: error.message }, { status: 500 });
+  }
+}`,
+  ],
+};
+
