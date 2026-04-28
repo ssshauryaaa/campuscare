@@ -169,29 +169,32 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
 
 ## 🛡️ Blue Team: Defense Dashboard
 
-The heart of the defensive experience is the **Blue Team Defense Dashboard** (`/defense`). This is where security analysts monitor the system, triage threats, and deploy code-level patches.
+The **Blue Team Defense Dashboard** (`/defense`) has been overhauled into a professional security operations center (SOC) with a clean, tabbed interface for streamlined monitoring and remediation.
 
-### 📡 Real-Time Intrusion Detection (IDS)
-*   **Live Monitoring:** Watch real-time simulated and manual attack traffic flow into the console.
-*   **Severity Triage:** Critical events trigger visual UI alarms (Red Flash) to alert defenders of high-impact breaches (e.g., SQLi auth bypass).
-*   **Deep Packet Inspection:** Click any log to open the **Threat Inspector**, revealing source IPs, HTTP metadata, and the exact raw payload used by the attacker.
+### 🗂️ 5-Tab Command Center
+*   **📡 Live Logs:** Real-time intrusion detection. Watch simulated and manual attack traffic. Click any row to acknowledge the threat and triage it for investigation.
+*   **🔍 Investigate:** Your active threat queue. Each card reveals attack details and provides access to the **Full File Source Viewer** and the **Patch IDE**.
+*   **🛡️ Vuln Scan:** An integrated vulnerability scanner that identifies weak endpoints in real-time.
+*   **🧰 Tools:** A defender's utility belt:
+    *   **JWT Decoder:** Analyze intercepted tokens for `alg: none` weaknesses and forged claims.
+    *   **Request Log:** Reconstruct raw HTTP requests (Headers, Payloads, IPs) as they appear over the wire.
+    *   **Quick Reference:** A built-in encyclopedia on how to detect, exploit, and fix every vulnerability in the app.
+*   **📁 Codebase:** A read-only **VS Code-style Explorer**. Browse the entire backend source code and explore the **SQLite Database Schema** to identify sensitive tables and weak column definitions.
 
 ### ⌨️ Professional "Fix Code" Workflow
-Remediation in CampusCare requires understanding the underlying vulnerability:
-1.  **Acknowledge:** Triage the event to earn initial detection points (+40 pts).
-2.  **Fix:** Launch the integrated **CampusCare IDE**.
-3.  **Modern Split-Pane IDE:**
-    *   **Vulnerable View (⛔):** See the exact lines of code (frontend or backend) that are causing the weakness.
-    *   **Patch Editor (✎):** Write the secure fix in the editor.
-    *   **Smart Validation:** The "Apply Fix" button only activates once you've actually modified the code. It prevents "empty" patches.
-    *   **Multi-File Remediation:** Complex vulnerabilities require patching multiple files (e.g., `login/route.ts` AND `logout/route.ts`) to completely close the vector.
-    *   **Hint System:** Use the 💡 Hint system to see secure coding patterns (e.g., parameterized queries or safe rendering).
+Remediation now requires deeper analysis and hunting:
+1.  **Acknowledge:** Triage the event in the Logs tab to move it to your investigation queue.
+2.  **Investigate:** Open the **Full-File Source Viewer**. Unlike simple snippets, you must now read the entire source file with line numbers and red-highlighted vulnerable blocks to understand the full context of the flaw.
+3.  **Patch (CampusCare IDE):**
+    *   **Full Context View:** The IDE shows the complete source file on the left.
+    *   **Precision Patching:** Identify the vulnerable lines and write the secure replacement on the right.
+    *   **Deploy & Enforce:** Deploying the patch earns points (e.g., +100 pts) and system-wide protection.
 
 ### 🛡️ Dynamic Patch Enforcement
-Once a patch is deployed via the IDE:
-*   **Global State Change:** The vulnerability is marked as "Patched" system-wide.
-*   **Active Interception:** The application's frontend will now actively intercept specific exploit payloads.
-*   **Feedback Loop:** Attackers will see a professional **🛡️ PATCHED** banner, and their malicious requests will be blocked.
+Once a patch is deployed:
+*   **Global Protection:** The vulnerability is neutralized. Attackers attempting the exploit will see a professional **🛡️ PATCHED** banner, and their requests will be blocked at the network level.
+*   **Score Gain:** Defenders only earn points for successful patches, emphasizing remediation over simple detection.
+
 
 ---
 

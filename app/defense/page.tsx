@@ -7,8 +7,10 @@ import { addPatchedVuln } from "@/lib/logAttack";
 import { LogsTab } from "@/components/defense/LogsTab";
 import { InvestigateTab } from "@/components/defense/InvestigateTab";
 import { ScanTab } from "@/components/defense/ScanTab";
+import { ToolsTab } from "@/components/defense/ToolsTab";
+import { CodebaseTab } from "@/components/defense/CodebaseTab";
 
-type Tab = "logs" | "investigate" | "scan";
+type Tab = "logs" | "investigate" | "scan" | "tools" | "codebase";
 
 export default function DefensePage() {
   const [activeTab, setActiveTab] = useState<Tab>("logs");
@@ -31,8 +33,7 @@ export default function DefensePage() {
     const log = logs.find(l => l.id === logId);
     if (!log || log.detected) { showToast("Already acknowledged", false); return; }
     setLogs(prev => prev.map(l => l.id === logId ? { ...l, detected: true } : l));
-    setScore(s => s + 40);
-    showToast("Threat acknowledged +40 pts — investigate it to patch");
+    showToast("Threat acknowledged — go to Investigate tab to view the code and patch it");
   }
 
   // ── Mark patched ─────────────────────────────────────────────────────────────
@@ -56,6 +57,8 @@ export default function DefensePage() {
     { id: "logs",        label: "Live Logs",   icon: "📡", badge: logs.filter(l => !l.detected && !patchedTypes.has(l.type)).length || undefined },
     { id: "investigate", label: "Investigate", icon: "🔍", badge: pendingInvestigate || undefined },
     { id: "scan",        label: "Vuln Scan",   icon: "🛡️" },
+    { id: "tools",       label: "Tools",       icon: "🧰" },
+    { id: "codebase",    label: "Codebase",    icon: "📁" },
   ];
 
   return (
@@ -166,7 +169,7 @@ export default function DefensePage() {
         {/* Divider + acknowledge tip for logs tab */}
         {activeTab === "logs" && (
           <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
-            Click any log row → acknowledge it (+40 pts), then go to <strong style={{ color: "rgba(255,255,255,0.4)" }}>Investigate</strong> to view the code and patch
+            Click any log row → acknowledge it, then go to <strong style={{ color: "rgba(255,255,255,0.4)" }}>Investigate</strong> to view the code and patch
           </div>
         )}
         {activeTab === "investigate" && (
@@ -204,7 +207,7 @@ export default function DefensePage() {
                       onClick={() => acknowledge(selectedLogId)}
                       style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, padding: "7px 16px", borderRadius: 7, cursor: "pointer", background: "rgba(26,60,110,0.08)", border: "1px solid rgba(26,60,110,0.2)", color: "#1a3c6e" }}
                     >
-                      ◉ Acknowledge +40 pts
+                      ◉ Acknowledge
                     </button>
                   ) : (
                     <button
@@ -243,6 +246,14 @@ export default function DefensePage() {
             patchedTypes={patchedTypes}
             onScanComplete={handleScanComplete}
           />
+        )}
+
+        {activeTab === "tools" && (
+          <ToolsTab logs={logs} />
+        )}
+
+        {activeTab === "codebase" && (
+          <CodebaseTab />
         )}
       </div>
 
