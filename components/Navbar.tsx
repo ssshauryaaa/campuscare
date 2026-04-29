@@ -30,7 +30,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/assignments": "Assignments",
   "/resources": "Resources",
   "/jwt-debug": "JWT Debugger",
-  // "/admin":       "Admin Console",
 };
 
 export default function Navbar() {
@@ -38,6 +37,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [hasCritical, setHasCritical] = useState(false);
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
 
   useEffect(() => {
     // Poll for unacknowledged critical attacks
@@ -88,150 +88,465 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ─── Left Sidebar ───────────────────────────────────────────────── */}
-      <aside
-        className="fixed inset-y-0 left-0 z-40 flex flex-col"
-        style={{ width: 240, background: "#ffffff", borderRight: "1px solid var(--cc-border)" }}
-      >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        /* ── Sidebar ── */
+        .nb-aside {
+          position: fixed;
+          inset-block: 0;
+          left: 0;
+          z-index: 40;
+          width: 240px;
+          display: flex;
+          flex-direction: column;
+          background: #ffffff;
+          border-right: 1px solid #e8e5de;
+          font-family: 'Sora', sans-serif;
+        }
+
+        /* ── Logo ── */
+        .nb-logo {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 20px 18px 18px;
+          border-bottom: 1px solid #edeae3;
+          flex-shrink: 0;
+        }
+
+        .nb-logo-mark {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #f5820a 0%, #e06700 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Sora', sans-serif;
+          font-size: 16px;
+          font-weight: 800;
+          color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 4px 12px rgba(245,130,10,0.25);
+        }
+
+        .nb-logo-text {}
+
+        .nb-logo-name {
+          font-size: 14px;
+          font-weight: 800;
+          color: #1a3c6e;
+          line-height: 1.1;
+          letter-spacing: -0.3px;
+        }
+
+        .nb-logo-sub {
+          font-size: 9px;
+          font-weight: 600;
+          color: #f5820a;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          margin-top: 1px;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Section label ── */
+        .nb-section-label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 8.5px;
+          font-weight: 500;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          color: #b0a898;
+          padding: 14px 18px 6px;
+          user-select: none;
+        }
+
+        /* ── Nav scroll area ── */
+        .nb-nav {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 10px 12px;
+          scrollbar-width: none;
+        }
+
+        .nb-nav::-webkit-scrollbar { display: none; }
+
+        /* ── Nav Item ── */
+        .nb-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 12px;
+          border-radius: 9px;
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+          position: relative;
+          margin-bottom: 2px;
+          transition: background 0.18s ease, color 0.18s ease;
+          color: #6b6560;
+          outline: none;
+        }
+
+        .nb-item-active {
+          background: #fff4e8;
+          color: #1a3c6e;
+        }
+
+        .nb-item-hover {
+          background: #f4f2ee;
+          color: #3a3530;
+        }
+
+        /* Active indicator pill on left */
+        .nb-item-active-bar {
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 3px;
+          height: 60%;
+          border-radius: 0 3px 3px 0;
+          background: #f5820a;
+          transition: opacity 0.18s, height 0.18s;
+        }
+
+        .nb-icon-wrap {
+          width: 30px;
+          height: 30px;
+          border-radius: 7px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: background 0.18s;
+        }
+
+        .nb-icon-wrap-active {
+          background: rgba(245,130,10,0.14);
+        }
+
+        .nb-icon-wrap-hover {
+          background: #edeae3;
+        }
+
+        .nb-item-label {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* Critical alert dot */
+        .nb-alert-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239,68,68,0.3);
+          animation: nb-pulse 2s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes nb-pulse {
+          0%, 100% { box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }
+          50%       { box-shadow: 0 0 0 5px rgba(239,68,68,0.08); }
+        }
+
+        /* ── Divider ── */
+        .nb-divider {
+          height: 1px;
+          background: #edeae3;
+          margin: 6px 10px;
+        }
+
+        /* ── User section ── */
+        .nb-user-section {
+          border-top: 1px solid #edeae3;
+          padding: 12px 10px 10px;
+          flex-shrink: 0;
+          background: #fafaf7;
+        }
+
+        .nb-user-card {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          text-decoration: none;
+          transition: background 0.18s;
+          margin-bottom: 4px;
+          cursor: pointer;
+        }
+
+        .nb-user-card:hover { background: #f0ede7; }
+
+        .nb-avatar {
+          width: 34px;
+          height: 34px;
+          border-radius: 9px;
+          background: linear-gradient(135deg, #f5820a, #e06700);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 800;
+          color: #fff;
+          flex-shrink: 0;
+          box-shadow: 0 2px 8px rgba(245,130,10,0.25);
+          font-family: 'Sora', sans-serif;
+        }
+
+        .nb-user-info { flex: 1; min-width: 0; }
+
+        .nb-user-name {
+          font-size: 12px;
+          font-weight: 700;
+          color: #1a3c6e;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .nb-user-role {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-top: 2px;
+          display: inline-block;
+          padding: 1px 6px;
+          border-radius: 4px;
+        }
+
+        .nb-user-role-admin {
+          background: rgba(220,38,38,0.1);
+          color: #dc2626;
+        }
+
+        .nb-user-role-staff {
+          background: rgba(202,138,4,0.1);
+          color: #b45309;
+        }
+
+        .nb-user-role-default {
+          background: rgba(245,130,10,0.12);
+          color: #c2550a;
+        }
+
+        .nb-user-chevron {
+          color: #c4bfb8;
+          flex-shrink: 0;
+          transition: color 0.15s, transform 0.15s;
+        }
+
+        .nb-user-card:hover .nb-user-chevron {
+          color: #9a9080;
+          transform: translateX(2px);
+        }
+
+        .nb-logout-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 12px;
+          border-radius: 9px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #9a9080;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          transition: background 0.18s, color 0.18s;
+          font-family: 'Sora', sans-serif;
+          text-align: left;
+        }
+
+        .nb-logout-btn:hover {
+          background: rgba(220,38,38,0.07);
+          color: #dc2626;
+        }
+
+        /* ── Top Header ── */
+        .nb-topbar {
+          position: fixed;
+          top: 0;
+          right: 0;
+          left: 240px;
+          z-index: 30;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 28px;
+          background: rgba(255,255,255,0.96);
+          backdrop-filter: blur(8px);
+          border-bottom: 1px solid #edeae3;
+          font-family: 'Sora', sans-serif;
+        }
+
+        .nb-topbar-title {
+          font-size: 15px;
+          font-weight: 800;
+          color: #111827;
+          letter-spacing: -0.3px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .nb-topbar-crumb {
+          font-size: 11px;
+          font-weight: 500;
+          color: #9a9080;
+          font-family: 'JetBrains Mono', monospace;
+          letter-spacing: 0.5px;
+        }
+
+        .nb-topbar-sep {
+          color: #d0cdc5;
+          font-size: 14px;
+          margin: 0 2px;
+        }
+
+        .nb-topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+
+        .nb-topbar-school {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6b6560;
+        }
+
+        .nb-topbar-date {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          font-weight: 500;
+          color: #9a9080;
+          padding: 4px 10px;
+          background: #f4f2ee;
+          border-radius: 6px;
+        }
+
+        .nb-topbar-divider {
+          width: 1px;
+          height: 18px;
+          background: #e8e5de;
+        }
+      `}</style>
+
+      {/* ─── Left Sidebar ── */}
+      <aside className="nb-aside">
+
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: "var(--cc-border)" }}>
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-base flex-shrink-0"
-            style={{ background: "var(--cc-orange)", color: "#fff" }}
-          >
-            C
-          </div>
-          <div>
-            <div className="font-black text-sm leading-tight tracking-tight" style={{ color: "var(--cc-navy)" }}>CampusCare</div>
-            <div className="text-[10px] font-semibold leading-tight" style={{ color: "var(--cc-orange)" }}>by Entab</div>
+        <div className="nb-logo">
+          <div className="nb-logo-mark">C</div>
+          <div className="nb-logo-text">
+            <div className="nb-logo-name">CampusCare</div>
+            <div className="nb-logo-sub">by Entab</div>
           </div>
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5 px-2">
+        {/* Nav */}
+        <nav className="nb-nav">
+          <div className="nb-section-label">Main Menu</div>
+
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
+            const isHovered = hoveredHref === href;
+
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all group"
-                style={{
-                  color: isActive ? "var(--cc-navy)" : "var(--cc-text-muted)",
-                  background: isActive ? "#f0f4ff" : "transparent",
-                  borderLeft: isActive ? "3px solid var(--cc-orange)" : "3px solid transparent",
-                }}
+                className={`nb-item ${isActive ? "nb-item-active" : isHovered ? "nb-item-hover" : ""}`}
+                onMouseEnter={() => setHoveredHref(href)}
+                onMouseLeave={() => setHoveredHref(null)}
               >
-                <Icon
-                  className="w-4 h-4 flex-shrink-0 transition-colors"
-                  style={{ color: isActive ? "var(--cc-orange)" : "#9ca3af" }}
-                />
-                <span className="truncate">{label}</span>
+                {isActive && <span className="nb-item-active-bar" />}
+                <div className={`nb-icon-wrap ${isActive ? "nb-icon-wrap-active" : isHovered ? "nb-icon-wrap-hover" : ""}`}>
+                  <Icon
+                    style={{
+                      width: 15, height: 15,
+                      color: isActive ? "#f5820a" : isHovered ? "#3a3530" : "#b0a898",
+                      transition: "color 0.18s",
+                    }}
+                  />
+                </div>
+                <span className="nb-item-label">{label}</span>
+                {hasCritical && href === "/defense" && <span className="nb-alert-dot" />}
               </Link>
             );
           })}
 
           {/* {user?.role === "admin" && (
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2"
-              style={{
-                color: pathname === "/admin" ? "#dc2626" : "rgba(220,38,38,0.7)",
-                background: pathname === "/admin" ? "rgba(220,38,38,0.08)" : "transparent",
-                borderLeft: pathname === "/admin" ? "3px solid #dc2626" : "3px solid transparent",
-              }}
-            >
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: "#ef4444" }} />
-              <span>Admin Panel</span>
-            </Link>
+            <Link href="/admin" ...>...</Link>
           )} */}
 
           {/* {(user?.role === "admin" || user?.role === "staff") && (
-            <Link
-              href="/defense"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all mt-2 relative group"
-              style={{
-                color: pathname === "/defense" ? "var(--cc-navy)" : "var(--cc-text-muted)",
-                background: pathname === "/defense" ? "#f0f4ff" : "transparent",
-                borderLeft: pathname === "/defense" ? "3px solid var(--cc-orange)" : "3px solid transparent",
-              }}
-            >
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" style={{ color: pathname === "/defense" ? "var(--cc-orange)" : "#9ca3af" }} />
-              <span className="truncate">Defense Console</span>
-              {hasCritical && (
-                <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", width: 8, height: 8, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 0 2px #fff", animation: "pulse 2s infinite" }} />
-              )}
-            </Link>
+            <Link href="/defense" ...>...</Link>
           )} */}
         </nav>
 
         {/* User Section */}
         {user && (
-          <div className="border-t p-3 space-y-2" style={{ borderColor: "var(--cc-border)" }}>
+          <div className="nb-user-section">
             <Link
               href={`/profile/${user.id}`}
-              className="flex items-center gap-3 p-2 rounded-lg transition-colors group"
-              style={{ background: "transparent" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#f8f9fa"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              className="nb-user-card"
             >
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0"
-                style={{ background: "var(--cc-orange)", color: "#fff" }}
-              >
-                {initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold truncate" style={{ color: "var(--cc-navy)" }}>{user.username}</div>
-                <div
-                  className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5"
-                  style={{
-                    background: user.role === "admin" ? "rgba(220,38,38,0.12)" : "rgba(245,130,10,0.12)",
-                    color: user.role === "admin" ? "#dc2626" : "var(--cc-orange)",
-                  }}
+              <div className="nb-avatar">{initials}</div>
+              <div className="nb-user-info">
+                <div className="nb-user-name">{user.username}</div>
+                <span
+                  className={`nb-user-role ${user.role === "admin" ? "nb-user-role-admin" :
+                      user.role === "staff" ? "nb-user-role-staff" :
+                        "nb-user-role-default"
+                    }`}
                 >
                   {user.role}
-                </div>
+                </span>
               </div>
-              <ChevronRight className="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" style={{ color: "var(--cc-text-muted)" }} />
+              <ChevronRight className="nb-user-chevron" style={{ width: 14, height: 14 }} />
             </Link>
 
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-              style={{ color: "var(--cc-text-muted)", background: "transparent" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.08)"; (e.currentTarget as HTMLElement).style.color = "#dc2626"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--cc-text-muted)"; }}
-            >
-              <LogOut className="w-3.5 h-3.5" />
+            <button onClick={logout} className="nb-logout-btn">
+              <LogOut style={{ width: 14, height: 14 }} />
               Sign Out
             </button>
           </div>
         )}
       </aside>
 
-      {/* ─── Top Header Bar ─────────────────────────────────────────────── */}
-      <header
-        className="fixed top-0 right-0 z-30 flex items-center justify-between px-6"
-        style={{
-          left: 240,
-          height: 56,
-          background: "#fff",
-          borderBottom: "1px solid var(--cc-border)",
-        }}
-      >
-        <h2 className="font-bold text-base" style={{ color: "var(--cc-navy)" }}>
-          {pageTitle}
-        </h2>
-        <div className="flex items-center gap-4">
-          <GraduationCap className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
-          <span className="text-sm font-semibold" style={{ color: "var(--cc-text-muted)" }}>
+      {/* ─── Top Header Bar ── */}
+      <header className="nb-topbar">
+        <div className="nb-topbar-title">
+          <span className="nb-topbar-crumb">CampusCare</span>
+          <span className="nb-topbar-sep">/</span>
+          <span>{pageTitle}</span>
+        </div>
+        <div className="nb-topbar-right">
+          <div className="nb-topbar-school">
+            <GraduationCap style={{ width: 15, height: 15, color: "#9a9080" }} />
             Tagore International School
-          </span>
-          <Bell className="w-4 h-4" style={{ color: "var(--cc-text-muted)" }} />
-          <span className="text-xs font-medium" style={{ color: "var(--cc-text-muted)" }}>
+          </div>
+          <div className="nb-topbar-divider" />
+          <div className="nb-topbar-date">
             {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-          </span>
+          </div>
         </div>
       </header>
     </>
