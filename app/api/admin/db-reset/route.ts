@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 
-const ADMIN_PASSWORD = process.env.ADMIN_RESET_PASSWORD ?? "breach@trix2025";
+const ADMIN_PASSWORD = process.env.ADMIN_RESET_PASSWORD ?? "pyrotech";
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json();

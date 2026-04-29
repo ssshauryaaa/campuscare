@@ -32,7 +32,7 @@ const mono = "'DM Mono', monospace";
 const sans = "'Nunito', sans-serif";
 
 // ── Password gate ─────────────────────────────────────────────────────────────
-const RESET_PASSWORD = "breach@trix2025";
+const RESET_PASSWORD = "pyrotech";
 
 export default function AdminResetPage() {
   const router = useRouter();
