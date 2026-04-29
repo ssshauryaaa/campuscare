@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import type { LogEntry, AttackType } from "@/types/defense";
 import { mono, sans, TYPE_LABELS } from "@/constants/campusTheme";
+import { KeyRound, Activity, BookOpen, Lightbulb, Zap, Unlock } from "lucide-react";
 
 type Props = { logs: LogEntry[] };
 
@@ -45,8 +46,8 @@ function JwtDecoder() {
           spellCheck={false} rows={4}
           style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "12px 14px", color: "#a5b4fc", fontFamily: mono, fontSize: 12.5, lineHeight: 1.7, resize: "vertical", outline: "none", boxSizing: "border-box" }}
         />
-        <button onClick={decode} style={{ marginTop: 12, padding: "10px 24px", background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: sans, letterSpacing: ".05em", boxShadow: "0 4px 15px rgba(99,102,241,0.35)" }}>
-          🔓 DECODE TOKEN
+        <button onClick={decode} style={{ marginTop: 12, padding: "10px 24px", background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: sans, letterSpacing: ".05em", boxShadow: "0 4px 15px rgba(99,102,241,0.35)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <Unlock size={14} /> DECODE TOKEN
         </button>
       </div>
 
@@ -58,7 +59,7 @@ function JwtDecoder() {
           {result.warnings.length > 0 && (
             <div style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03))", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 12, overflow: "hidden" }}>
               <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14 }}>⚡</span>
+                <Zap size={14} color="#f87171" />
                 <span style={{ fontSize: 10, fontWeight: 800, color: "#f87171", letterSpacing: ".12em" }}>SECURITY FINDINGS ({result.warnings.length})</span>
               </div>
               <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -99,8 +100,11 @@ function JwtDecoder() {
           </div>
 
           {/* Forge hint */}
-          <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "12px 16px", fontSize: 12, color: "#a5b4fc", lineHeight: 1.65 }}>
-            💡 <strong>To forge an admin token:</strong> Set <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>alg=none</code>, change <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>role=admin</code>, re-encode both parts, and drop the signature. Try the live lab at <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>/jwt-debug</code>.
+          <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "12px 16px", fontSize: 12, color: "#a5b4fc", lineHeight: 1.65, display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <Lightbulb size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <strong>To forge an admin token:</strong> Set <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>alg=none</code>, change <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>role=admin</code>, re-encode both parts, and drop the signature. Try the live lab at <code style={{ fontFamily: mono, background: "rgba(99,102,241,0.15)", padding: "1px 5px", borderRadius: 3 }}>/jwt-debug</code>.
+            </div>
           </div>
         </div>
       )}
@@ -180,7 +184,7 @@ function RequestInspector({ logs }: { logs: LogEntry[] }) {
         </div>
       ) : (
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-          <div style={{ fontSize: 40, opacity: 0.08 }}>📡</div>
+          <Activity size={48} color="#374151" opacity={0.3} />
           <div style={{ fontSize: 11, color: "#374151", fontWeight: 700, letterSpacing: ".1em" }}>SELECT A REQUEST</div>
           <div style={{ fontSize: 11, color: "#1f2937" }}>Click any entry from the feed to inspect</div>
         </div>
@@ -238,10 +242,10 @@ function QuickRef() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 type Tool = "jwt" | "requests" | "reference";
 
-const TOOLS: { id: Tool; icon: string; label: string; desc: string; accent: string }[] = [
-  { id: "jwt",       icon: "🔓", label: "JWT Decoder",     desc: "Decode & analyze tokens for weaknesses",     accent: "#6366f1" },
-  { id: "requests",  icon: "📡", label: "Request Log",     desc: "Inspect raw HTTP attack requests",            accent: "#f5820a" },
-  { id: "reference", icon: "📖", label: "Quick Reference", desc: "Detect, exploit & fix each vulnerability",    accent: "#10b981" },
+const TOOLS: { id: Tool; icon: React.ReactNode; label: string; desc: string; accent: string }[] = [
+  { id: "jwt",       icon: <KeyRound size={20} />, label: "JWT Decoder",     desc: "Decode & analyze tokens for weaknesses",     accent: "#6366f1" },
+  { id: "requests",  icon: <Activity size={20} />, label: "Request Log",     desc: "Inspect raw HTTP attack requests",            accent: "#f5820a" },
+  { id: "reference", icon: <BookOpen size={20} />, label: "Quick Reference", desc: "Detect, exploit & fix each vulnerability",    accent: "#10b981" },
 ];
 
 export function ToolsTab({ logs }: Props) {
@@ -249,9 +253,9 @@ export function ToolsTab({ logs }: Props) {
   const active = TOOLS.find(t => t.id === activeTool)!;
 
   const HEADINGS: Record<Tool, { title: string; sub: string }> = {
-    jwt:       { title: "🔓 JWT Token Decoder", sub: "Paste any token intercepted from DevTools → Application → Cookies to decode and audit it." },
-    requests:  { title: "📡 HTTP Request Inspector", sub: "Select an attack log entry to reconstruct the full raw HTTP request with headers and payload." },
-    reference: { title: "📖 Vulnerability Reference", sub: "How each attack works, how to detect it, and the exact code fix to patch it." },
+    jwt:       { title: "JWT Token Decoder", sub: "Paste any token intercepted from DevTools → Application → Cookies to decode and audit it." },
+    requests:  { title: "HTTP Request Inspector", sub: "Select an attack log entry to reconstruct the full raw HTTP request with headers and payload." },
+    reference: { title: "Vulnerability Reference", sub: "How each attack works, how to detect it, and the exact code fix to patch it." },
   };
 
   return (
@@ -274,7 +278,7 @@ export function ToolsTab({ logs }: Props) {
                 cursor: "pointer", fontFamily: sans, transition: "all .15s",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 3 }}>
-                  <span style={{ fontSize: 18 }}>{tool.icon}</span>
+                  <span style={{ display: "flex", alignItems: "center" }}>{tool.icon}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? tool.accent : "#64748b" }}>{tool.label}</span>
                 </div>
                 <div style={{ fontSize: 10, color: "#374151", lineHeight: 1.5, paddingLeft: 27 }}>{tool.desc}</div>
@@ -283,8 +287,9 @@ export function ToolsTab({ logs }: Props) {
             );
           })}
         </div>
-        <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: "#374151", lineHeight: 1.65 }}>
-          💡 Use these in parallel with the Live Logs tab to analyze attacks in real time.
+        <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: "#374151", lineHeight: 1.65, display: "flex", gap: 6, alignItems: "flex-start" }}>
+          <Lightbulb size={12} style={{ flexShrink: 0, marginTop: 1, color: "#4b5563" }} />
+          <span>Use these in parallel with the Live Logs tab to analyze attacks in real time.</span>
         </div>
       </div>
 

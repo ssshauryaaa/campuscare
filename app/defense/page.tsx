@@ -9,6 +9,7 @@ import { InvestigateTab } from "@/components/defense/InvestigateTab";
 import { ScanTab } from "@/components/defense/ScanTab";
 import { ToolsTab } from "@/components/defense/ToolsTab";
 import { CodebaseTab } from "@/components/defense/CodebaseTab";
+import { Activity, Search, ShieldAlert, Wrench, FolderCode } from "lucide-react";
 
 type Tab = "logs" | "investigate" | "scan" | "tools" | "codebase";
 
@@ -53,12 +54,12 @@ export default function DefensePage() {
     showToast(`🔍 Scan complete — +${pts} bonus pts`);
   }
 
-  const TABS: { id: Tab; label: string; icon: string; badge?: number }[] = [
-    { id: "logs",        label: "Live Logs",   icon: "📡", badge: logs.filter(l => !l.detected && !patchedTypes.has(l.type)).length || undefined },
-    { id: "investigate", label: "Investigate", icon: "🔍", badge: pendingInvestigate || undefined },
-    { id: "scan",        label: "Vuln Scan",   icon: "🛡️" },
-    { id: "tools",       label: "Tools",       icon: "🧰" },
-    { id: "codebase",    label: "Codebase",    icon: "📁" },
+  const TABS: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { id: "logs",        label: "Live Logs",   icon: <Activity size={18} />, badge: logs.filter(l => !l.detected && !patchedTypes.has(l.type)).length || undefined },
+    { id: "investigate", label: "Investigate", icon: <Search size={18} />, badge: pendingInvestigate || undefined },
+    { id: "scan",        label: "Vuln Scan",   icon: <ShieldAlert size={18} /> },
+    { id: "tools",       label: "Tools",       icon: <Wrench size={18} /> },
+    { id: "codebase",    label: "Codebase",    icon: <FolderCode size={18} /> },
   ];
 
   return (
@@ -72,54 +73,58 @@ export default function DefensePage() {
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 28px", height: 56,
-        background: "#1a3c6e", flexShrink: 0, gap: 16,
+        padding: "0 32px", height: 64,
+        background: "#0b1120", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0, gap: 16,
       }}>
         {/* Branding */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 30, height: 30, background: "rgba(245,130,10,0.18)", border: "1px solid rgba(245,130,10,0.4)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, rgba(245,130,10,0.2) 0%, rgba(245,130,10,0.05) 100%)", border: "1px solid rgba(245,130,10,0.3)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 20px rgba(245,130,10,0.15)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#f5820a" />
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "-.01em" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-.02em" }}>
               CampusCare <span style={{ color: "#f5820a" }}>Defense</span>
             </div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Blue Team Console · Breach@trix</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, letterSpacing: ".02em", marginTop: 2 }}>Blue Team Console · Breach@trix</div>
           </div>
 
           {critCount > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 6, padding: "3px 10px" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.2s infinite" }} />
-              <span style={{ fontSize: 10, color: "#fca5a5", fontWeight: 700, letterSpacing: ".08em" }}>{critCount} CRITICAL ACTIVE</span>
+            <div style={{ marginLeft: 16, display: "flex", alignItems: "center", gap: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, padding: "4px 12px" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontSize: 11, color: "#fca5a5", fontWeight: 700, letterSpacing: ".05em" }}>{critCount} CRITICAL</span>
             </div>
           )}
         </div>
 
         {/* Right: score + controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {[...patchedTypes].map(t => (
-            <div key={t} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 6, padding: "3px 10px" }}>
-              <span style={{ fontSize: 10, color: "#4ade80", fontWeight: 700 }}>✓ {TYPE_LABELS[t].split(" ")[0]}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          {patchedTypes.size > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {[...patchedTypes].map(t => (
+                <div key={t} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 20, padding: "4px 12px" }}>
+                  <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>✓ {TYPE_LABELS[t].split(" ")[0]}</span>
+                </div>
+              ))}
             </div>
-          ))}
-
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 700, letterSpacing: ".1em", marginBottom: 1 }}>BLUE TEAM SCORE</div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#f5820a", lineHeight: 1, letterSpacing: "-.03em", fontFamily: mono }}>{score.toLocaleString()}</div>
-          </div>
+          )}
 
           <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.1)" }} />
+
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, letterSpacing: ".1em", marginBottom: 2 }}>TEAM SCORE</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#f5820a", lineHeight: 1, letterSpacing: "-.02em", fontFamily: mono, textShadow: "0 0 20px rgba(245,130,10,0.3)" }}>{score.toLocaleString()}</div>
+          </div>
 
           <button
             onClick={() => setIsRunning(v => !v)}
             style={{
-              fontFamily: sans, fontSize: 11, fontWeight: 700, letterSpacing: ".06em",
-              padding: "6px 14px", borderRadius: 6, cursor: "pointer",
+              fontFamily: sans, fontSize: 12, fontWeight: 700, letterSpacing: ".05em",
+              padding: "8px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.2s ease",
               ...(isRunning
-                ? { background: "rgba(245,130,10,0.15)", border: "1px solid rgba(245,130,10,0.4)", color: "#f5820a" }
-                : { background: "rgba(22,163,74,0.15)", border: "1px solid rgba(22,163,74,0.4)", color: "#4ade80" }),
+                ? { background: "rgba(245,130,10,0.1)", border: "1px solid rgba(245,130,10,0.3)", color: "#f5820a", boxShadow: "0 4px 12px rgba(245,130,10,0.1)" }
+                : { background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#4ade80", boxShadow: "0 4px 12px rgba(34,197,94,0.1)" }),
             }}
           >
             {isRunning ? "⏸ PAUSE" : "▶ RESUME"}
@@ -129,9 +134,10 @@ export default function DefensePage() {
 
       {/* ── SUB-NAV ─────────────────────────────────────────────────────────── */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 2,
-        padding: "0 28px", height: 46,
-        background: "#0f2347", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "0 32px", height: 56,
+        background: "#0f172a", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
       }}>
         {TABS.map(tab => {
           const active = activeTab === tab.id;
@@ -140,24 +146,37 @@ export default function DefensePage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                fontFamily: sans, fontSize: 12, fontWeight: 700, letterSpacing: ".05em",
-                padding: "8px 18px", borderRadius: 7, cursor: "pointer",
-                border: active ? "1px solid rgba(245,130,10,0.35)" : "1px solid transparent",
-                background: active ? "rgba(245,130,10,0.12)" : "transparent",
-                color: active ? "#f5820a" : "rgba(255,255,255,0.4)",
+                fontFamily: sans, fontSize: 13, fontWeight: 700, letterSpacing: ".02em",
+                padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+                border: active ? "1px solid rgba(245,130,10,0.3)" : "1px solid transparent",
+                background: active ? "rgba(245,130,10,0.08)" : "transparent",
+                color: active ? "#f5820a" : "#94a3b8",
                 display: "flex", alignItems: "center", gap: 8,
-                transition: "all .15s",
+                transition: "all .2s ease",
+                boxShadow: active ? "0 4px 12px rgba(245,130,10,0.05)" : "none",
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.color = "#cbd5e1";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.color = "#94a3b8";
+                  e.currentTarget.style.background = "transparent";
+                }
               }}
             >
-              <span>{tab.icon}</span>
+              <span style={{ display: "flex", alignItems: "center", opacity: active ? 1 : 0.7 }}>{tab.icon}</span>
               {tab.label}
               {tab.badge != null && (
                 <span style={{
-                  fontSize: 10, fontWeight: 800,
-                  background: active ? "rgba(245,130,10,0.25)" : "rgba(239,68,68,0.25)",
+                  fontSize: 11, fontWeight: 800,
+                  background: active ? "rgba(245,130,10,0.2)" : "rgba(239,68,68,0.15)",
                   color: active ? "#f5820a" : "#f87171",
-                  border: `1px solid ${active ? "rgba(245,130,10,0.4)" : "rgba(239,68,68,0.4)"}`,
-                  borderRadius: 10, padding: "1px 7px", minWidth: 20, textAlign: "center",
+                  border: `1px solid ${active ? "rgba(245,130,10,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  borderRadius: 12, padding: "2px 8px", minWidth: 24, textAlign: "center",
                 }}>
                   {tab.badge}
                 </span>
@@ -168,12 +187,12 @@ export default function DefensePage() {
 
         {/* Divider + acknowledge tip for logs tab */}
         {activeTab === "logs" && (
-          <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
-            Click any log row → acknowledge it, then go to <strong style={{ color: "rgba(255,255,255,0.4)" }}>Investigate</strong> to view the code and patch
+          <div style={{ marginLeft: "auto", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+            Click any log row → acknowledge it, then go to <strong style={{ color: "#94a3b8" }}>Investigate</strong> to view the code and patch
           </div>
         )}
         {activeTab === "investigate" && (
-          <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
+          <div style={{ marginLeft: "auto", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
             View full source files, then open the Patch IDE to fix the vulnerability and claim points
           </div>
         )}

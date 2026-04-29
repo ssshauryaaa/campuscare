@@ -18,6 +18,11 @@ export function getDb(): Database.Database {
 
 function initDb(db: Database.Database) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS patches (
+      vuln_type TEXT PRIMARY KEY,
+      patched_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       username  TEXT NOT NULL,
