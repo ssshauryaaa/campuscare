@@ -10,12 +10,11 @@ type Props = {
   patchedTypes: Set<AttackType>;
   selected: string | null;
   onSelect: (id: string) => void;
-  isRunning: boolean;
 };
 
 type FilterTab = "all" | "acknowledged" | "patched";
 
-export function LogsTab({ logs, setLogs, patchedTypes, selected, onSelect, isRunning }: Props) {
+export function LogsTab({ logs, setLogs, patchedTypes, selected, onSelect }: Props) {
   const [filterTab, setFilterTab] = React.useState<FilterTab>("all");
 
   const tabCounts = {
@@ -66,11 +65,11 @@ export function LogsTab({ logs, setLogs, patchedTypes, selected, onSelect, isRun
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: ".08em",
-            color: isRunning ? "#16a34a" : "#9ca3af",
+            color: "#16a34a",
             display: "flex", alignItems: "center", gap: 5,
           }}>
-            {isRunning && <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#16a34a", animation: "pulse 1.2s infinite" }} />}
-            {isRunning ? "LIVE MONITORING" : "PAUSED"}
+            <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#16a34a", animation: "pulse 1.2s infinite" }} />
+            LIVE MONITORING
           </span>
           <button
             onClick={() => setLogs(() => [])}

@@ -15,13 +15,12 @@ type Tab = "logs" | "investigate" | "scan" | "tools" | "codebase";
 
 export default function DefensePage() {
   const [activeTab, setActiveTab] = useState<Tab>("logs");
-  const [isRunning, setIsRunning] = useState(true);
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [patchedTypes, setPatchedTypes] = useState<Set<AttackType>>(new Set());
   const [, showToast] = useToast();
 
-  const { logs, setLogs, alertFlash } = useAttackSimulator(patchedTypes, isRunning);
+  const { logs, setLogs, alertFlash } = useAttackSimulator(patchedTypes);
 
   // ── Stats ────────────────────────────────────────────────────────────────────
   const critCount = logs.filter(l => l.severity === "critical" && !patchedTypes.has(l.type)).length;
@@ -117,18 +116,7 @@ export default function DefensePage() {
             <div style={{ fontSize: 26, fontWeight: 800, color: "#f5820a", lineHeight: 1, letterSpacing: "-.02em", fontFamily: mono, textShadow: "0 0 20px rgba(245,130,10,0.3)" }}>{score.toLocaleString()}</div>
           </div>
 
-          <button
-            onClick={() => setIsRunning(v => !v)}
-            style={{
-              fontFamily: sans, fontSize: 12, fontWeight: 700, letterSpacing: ".05em",
-              padding: "8px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.2s ease",
-              ...(isRunning
-                ? { background: "rgba(245,130,10,0.1)", border: "1px solid rgba(245,130,10,0.3)", color: "#f5820a", boxShadow: "0 4px 12px rgba(245,130,10,0.1)" }
-                : { background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#4ade80", boxShadow: "0 4px 12px rgba(34,197,94,0.1)" }),
-            }}
-          >
-            {isRunning ? "⏸ PAUSE" : "▶ RESUME"}
-          </button>
+
         </div>
       </header>
 
@@ -246,7 +234,7 @@ export default function DefensePage() {
               patchedTypes={patchedTypes}
               selected={selectedLogId}
               onSelect={id => setSelectedLogId(prev => prev === id ? null : id)}
-              isRunning={isRunning}
+
             />
           </div>
         )}

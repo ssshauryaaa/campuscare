@@ -1,222 +1,553 @@
 # CampusCare Defense Dashboard — Vulnerability Solutions Guide
 
-This document provides a comprehensive overview of the security vulnerabilities present in the CampusCare platform, along with their technical explanations, impact, and the recommended code patches to secure the application.
+This document provides the exact code snippets and solutions for all security vulnerabilities in the CampusCare platform. These solutions correspond directly to the 'Investigate' tab in the Blue Team Defense Dashboard.
 
 ---
 
-## Table of Contents
-1. [SQL Injection (SQLi)](#1-sql-injection-sqli)
-2. [Cross-Site Scripting (XSS)](#2-cross-site-scripting-xss)
-3. [Insecure Direct Object Reference (IDOR)](#3-insecure-direct-object-reference-idor)
-4. [Broken Authentication & Session Management](#4-broken-authentication--session-management)
-5. [Sensitive Data Exposure & Reconnaissance](#5-sensitive-data-exposure--reconnaissance)
-6. [Local File Inclusion (LFI)](#6-local-file-inclusion-lfi)
-7. [Open Redirect](#7-open-redirect)
+## SQL Injection — Login
 
----
+**Description:** Username and password are interpolated directly into the SQL query string, allowing auth bypass via comments and tautologies. Review the code to locate the vulnerability.
 
-## 1. SQL Injection (SQLi)
+### File: `app/login/page.tsx`
 
-### 1.1 Authentication Bypass (Login)
-*   **Vulnerability:** User input is directly interpolated into a SQL string.
-*   **Impact:** Attackers can bypass login by using tautologies (e.g., `' OR 1=1--`) or comments.
-*   **Vulnerable Code (`app/api/auth/login/route.ts`):**
-    ```typescript
-    const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-    const user = db.prepare(query).get();
-    ```
-*   **Solution:** Use parameterized queries.
-    ```typescript
-    const user = db.prepare(
-      "SELECT * FROM users WHERE username = ? AND password = ?"
-    ).get(username, password);
-    ```
-
-### 1.2 Data Exfiltration (Search)
-*   **Vulnerability:** The search query and filters are string-interpolated into the SQL SELECT statement.
-*   **Impact:** Attackers can use `UNION SELECT` to dump the entire database, including user credentials.
-*   **Vulnerable Code (`app/api/search/route.ts`):**
-    ```typescript
-    let sql = `SELECT id, full_name, class, section, admission_no FROM students WHERE full_name LIKE '%${q}%'`;
-    if (classFilter) sql += ` AND class = '${classFilter}'`;
-    const results = db.prepare(sql).all();
-    ```
-*   **Solution:** Use parameterized placeholders for all user-controlled inputs.
-    ```typescript
-    let sql = "SELECT id, full_name, class, section, admission_no FROM students WHERE full_name LIKE ?";
-    const params: any[] = [`%${q}%`];
-    if (classFilter) { 
-      sql += " AND class = ?"; 
-      params.push(classFilter); 
+**Vulnerable Code:**
+```typescript
+  const handleSubmit = async () => {
+    if (!form.username || !form.password) {
+      setError("Both fields are required.");
+      return;
     }
-    const results = db.prepare(sql).all(...params);
-    ```
+    setLoading(true);
+    
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      // ...
+    }
+  };
+```
 
-### 1.3 Profile ID Injection
-*   **Vulnerability:** The `id` parameter from the URL is used directly in a query without validation or parameterization.
-*   **Impact:** Unauthorized data access via `UNION` based attacks.
-*   **Vulnerable Code (`app/api/profile/[id]/route.ts`):**
-    ```typescript
-    const profile = db.prepare(`SELECT * FROM users WHERE id = ${id}`).get();
-    ```
-*   **Solution:** Validate that the ID is numeric and use parameterization.
-    ```typescript
-    if (!/^\d+$/.test(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));
-    ```
+**Solution (Patch):**
+```typescript
+// The frontend is correctly sending the credentials as JSON.
+// The SQL injection vulnerability is actually on the server side.
+// Look at the backend route handling this request.
+```
+
+### File: `app/api/auth/login/route.ts`
+
+**Vulnerable Code:**
+```typescript
+const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+  const user = db.prepare(query).get();
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use parameterized query — never interpolate user input into SQL
+  const user = db.prepare(
+    "SELECT * FROM users WHERE username = ? AND password = ?"
+  ).get(username, password);
+```
 
 ---
 
-## 2. Cross-Site Scripting (XSS)
+## SQL Injection — Student Search
 
-### 2.1 Stored XSS (Notice Board & Dashboard)
-*   **Vulnerability:** User-provided content (titles, author names, notice body) is rendered using `dangerouslySetInnerHTML`.
-*   **Impact:** Persistent malicious scripts execute in the browsers of all users who view the notices.
-*   **Vulnerable Code (`app/notices/page.tsx`):**
-    ```tsx
-    <h3 dangerouslySetInnerHTML={{ __html: notice.title }} />
-    <span dangerouslySetInnerHTML={{ __html: notice.author }} />
-    <p dangerouslySetInnerHTML={{ __html: notice.content }} />
-    ```
-*   **Solution:** Use standard React text nodes which automatically escape HTML entities.
-    ```tsx
-    <h3>{notice.title}</h3>
-    <span>{notice.author}</span>
-    <p>{notice.content}</p>
-    ```
+**Description:** The search query `q` and class filter are string-interpolated into the SQL SELECT, allowing UNION-based data exfiltration.
 
-### 2.2 DOM-Based XSS (URL Hash)
-*   **Vulnerability:** Data from `window.location.hash` is written directly to the DOM using `.innerHTML`.
-*   **Impact:** Attackers can craft a URL that, when clicked, executes arbitrary JavaScript in the victim's browser.
-*   **Vulnerable Code (`app/notices/page.tsx`):**
-    ```javascript
+### File: `app/api/search/route.ts`
+
+**Vulnerable Code:**
+```typescript
+let sql = `SELECT id, full_name, class, section, admission_no FROM students WHERE full_name LIKE '%${q}%'`;
+  if (classFilter) sql += ` AND class = '${classFilter}'`;
+  const results = db.prepare(sql).all();
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use parameterized queries
+  let sql = "SELECT id, full_name, class, section, admission_no FROM students WHERE full_name LIKE ?";
+  const params: any[] = [`%${q}%`];
+  if (classFilter) { sql += " AND class = ?"; params.push(classFilter); }
+  const results = db.prepare(sql).all(...params);
+```
+
+---
+
+## SQL Injection — Profile URL Parameter
+
+**Description:** The profile ID from the URL is not validated and is interpolated directly into the SQL query.
+
+### File: `app/api/profile/[id]/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: id from URL is interpolated — UNION SELECT possible
+  const profile = db.prepare(`SELECT * FROM users WHERE id = ${id}`).get();
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Validate id is numeric and use parameterized query
+  if (!/^\d+$/.test(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));
+```
+
+---
+
+## SQL Injection — Class Filter Parameter
+
+**Description:** The ?class= URL parameter is appended directly to SQL without sanitisation.
+
+### File: `app/api/search/route.ts`
+
+**Vulnerable Code:**
+```typescript
+if (classFilter) sql += ` AND class = '${classFilter}'`;
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use a parameterized placeholder
+  if (classFilter) { sql += " AND class = ?"; params.push(classFilter); }
+```
+
+---
+
+## Stored XSS — Notice Board
+
+**Description:** Notice title, author, and content are rendered via dangerouslySetInnerHTML, executing any stored script payloads.
+
+### File: `app/notices/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+<h3
+  dangerouslySetInnerHTML={{ __html: highlightFn(notice.title, highlight) }}
+/>
+<span dangerouslySetInnerHTML={{ __html: notice.author }} />
+<p dangerouslySetInnerHTML={{ __html: highlightFn(notice.content, highlight) }} />
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Render as plain React text — no HTML injection possible
+<h3>{notice.title}</h3>
+<span>{notice.author}</span>
+<p>{notice.content}</p>
+// Or pass isXssPatched={true} to <NoticeCard> which switches to safe rendering.
+```
+
+---
+
+## Stored XSS — Dashboard Notice Widget
+
+**Description:** Notice titles in the dashboard quick-view widget are rendered as raw HTML.
+
+### File: `app/dashboard/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+<h4
+  dangerouslySetInnerHTML={{ __html: n.title }}
+/>
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use safe React text rendering
+<h4>{n.title}</h4>
+```
+
+---
+
+## Stored XSS — Profile Full Name
+
+**Description:** The full_name field is rendered with dangerouslySetInnerHTML — a registered user can inject scripts via their name.
+
+### File: `app/profile/[id]/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+<h1
+  dangerouslySetInnerHTML={{ __html: profile.full_name }}
+/>
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use safe React text rendering
+<h1>{profile.full_name}</h1>
+```
+
+---
+
+## Reflected XSS — Search Results Header
+
+**Description:** The search query string is reflected back into the DOM via dangerouslySetInnerHTML in the results header.
+
+### File: `app/search/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+<div
+  dangerouslySetInnerHTML={{ __html: `Found <span>...${searched}...</span>` }}
+/>
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use JSX with explicit text nodes — no HTML injection
+<div>
+  Found <span style={{ color:"var(--cc-orange)", fontWeight:800 }}>{results.length}</span>
+  {" "}records for &ldquo;{searched}&rdquo;
+</div>
+```
+
+---
+
+## DOM-Based XSS — URL Hash
+
+**Description:** window.location.hash is written directly into the DOM via innerHTML, enabling script execution from a crafted URL.
+
+### File: `app/notices/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+const hash = window.location.hash.slice(1);
+if (hash) {
+  const filterEl = document.getElementById("filter-display");
+  if (filterEl) {
+    // VULNERABILITY: innerHTML set from URL hash — DOM-based XSS
     filterEl.innerHTML = `Filtered by: ${decodeURIComponent(hash)}`;
-    ```
-*   **Solution:** Use `.textContent` to ensure the input is treated as plain text.
-    ```javascript
-    filterEl.textContent = `Filtered by: ${decodeURIComponent(hash)}`;
-    ```
+  }
+}
+```
 
-### 2.3 Reflected XSS (Search & Login Errors)
-*   **Vulnerability:** Search queries or error messages containing user input are reflected back into the page using `dangerouslySetInnerHTML`.
-*   **Impact:** Transient script execution when a user follows a malicious link or submits a crafted form.
-*   **Solution:** Render the reflected data as plain text or use safe JSX components.
-
-### 2.4 Stored XSS (Feedback Admin Response)
-*   **Vulnerability:** The admin response on a feedback ticket is rendered using `dangerouslySetInnerHTML`.
-*   **Impact:** Malicious scripts injected by an attacker (simulating a compromised admin) execute when a student views their ticket.
-*   **Vulnerable Code (`app/feedback/page.tsx`):**
-    ```tsx
-    <div dangerouslySetInnerHTML={{ __html: result.admin_response }} />
-    ```
-*   **Solution:** Render the response as a standard React child.
-    ```tsx
-    <div>{result.admin_response}</div>
-    ```
+**Solution (Patch):**
+```typescript
+// FIX: Use textContent — never innerHTML from untrusted sources
+if (filterEl) {
+  filterEl.textContent = `Filtered by: ${decodeURIComponent(hash)}`;
+}
+```
 
 ---
 
-## 3. Insecure Direct Object Reference (IDOR)
+## Reflected XSS — Login Error Message
 
-### 3.1 Profile Access
-*   **Vulnerability:** The application fetches profiles based on ID without checking if the requester has permission to view that specific profile.
-*   **Impact:** Students can view private details of other students, teachers, or administrators.
-*   **Vulnerable Code (`app/api/profile/[id]/route.ts`):**
-    ```typescript
-    const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));
-    ```
-*   **Solution:** Implement an authorization check to ensure the user is either the owner of the profile or has an administrative role.
-    ```typescript
-    const tokenUser = verifyJWT(request.headers.get("cookie"));
-    if (tokenUser.id !== Number(id) && tokenUser.role === "student") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    ```
+**Description:** The login error message (which may contain the username) is rendered via dangerouslySetInnerHTML.
 
-### 3.2 Private Feedback Access
-*   **Vulnerability:** Any authenticated user can fetch any other user's private feedback by changing the ticket ID in the URL.
-*   **Impact:** Exposure of sensitive feedback tickets, which may contain flags or personal data.
-*   **Vulnerable Code (`app/api/feedback/route.ts`):**
-    ```typescript
-    const row = db.prepare(`SELECT * FROM feedback WHERE id = ?`).get(id);
-    ```
-*   **Solution:** Verify requester owns the feedback or has an admin role.
-    ```typescript
-    const row = db.prepare(
-      "SELECT id, content, status, admin_response FROM feedback WHERE id = ? AND (student_id = ? OR ? = 'admin')"
-    ).get(id, user.userId, user.role);
-    ```
+### File: `app/login/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+<p
+  dangerouslySetInnerHTML={{
+    __html: `<span style="font-weight:800">Login failed for user '${form.username}':</span> ${error}`
+  }}
+/>
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Render error as plain text — escape username
+<p style={{ fontSize:12, color:"#dc2626" }}>
+  Login failed for user &apos;{form.username}&apos;: {error}
+</p>
+```
 
 ---
 
-## 4. Broken Authentication & Session Management
+## Open Redirect — ?next= Parameter
 
-### 4.1 JWT Forgery (Weak Secret & None Algorithm)
-*   **Vulnerability:** The JWT verification logic explicitly allows the `none` algorithm and uses a weak, hardcoded secret.
-*   **Impact:** Attackers can modify their own role to "admin" by stripping the signature or brute-forcing the weak secret.
-*   **Vulnerable Code (`lib/auth.ts`):**
-    ```typescript
-    return jwt.verify(token, JWT_SECRET, { algorithms: ["HS256", "none"] });
-    ```
-*   **Solution:** Remove `none` from the allowed algorithms and use a strong secret from environment variables.
-    ```typescript
-    return jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ["HS256"] });
-    ```
+**Description:** After login, the ?next= URL parameter is used for redirect without origin validation — any external URL is accepted.
 
-### 4.2 Session Fixation (Insecure Cookies & Lack of Invalidation)
-*   **Vulnerability:** Cookies are not marked as `HttpOnly`, allowing them to be stolen via XSS. Furthermore, tokens are not invalidated on the server after logout.
-*   **Impact:** Hijacked sessions remain valid until they naturally expire, even if the user logs out.
-*   **Solution:**
-    1.  Set `httpOnly: true` on session cookies.
-    2.  Implement a server-side blocklist for JWTs that have been logged out.
+### File: `app/login/page.tsx`
 
----
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: redirects to any URL — no check that it starts with '/'
+const nextUrl = new URLSearchParams(window.location.search).get("next");
+router.push(nextUrl || "/dashboard");
+```
 
-## 5. Sensitive Data Exposure & Reconnaissance
-
-### 5.1 Sensitive Data in Source Code
-*   **Vulnerability:** HTML comments contain administrative credentials and database paths.
-*   **Impact:** Attackers can gain administrative access by simply viewing the page source.
-*   **Solution:** Remove all developer notes and sensitive information from client-side code.
-
-### 5.2 Exposed Environment Files
-*   **Vulnerability:** An API endpoint (`/api/env-file`) serves the raw `.env` file.
-*   **Impact:** Exposure of database passwords, JWT secrets, and API keys.
-*   **Solution:** Delete the endpoint. Never expose raw configuration files over HTTP.
+**Solution (Patch):**
+```typescript
+// FIX: Only allow relative paths (starting with '/')
+const nextUrl = new URLSearchParams(window.location.search).get("next");
+const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/dashboard";
+router.push(safeNext);
+```
 
 ---
 
-## 6. Local File Inclusion (LFI)
+## IDOR — Profile Access Control
 
-### 6.1 Path Traversal in Document Fetching
-*   **Vulnerability:** The application uses a filename from the URL to read files from the disk without sanitizing the path.
-*   **Impact:** Attackers can use `../` sequences to read any file on the server (e.g., `/etc/passwd` or `.env`).
-*   **Vulnerable Code (`app/api/documents/route.ts`):**
-    ```typescript
-    const targetPath = path.join(process.cwd(), "public", "documents", file);
-    const content = fs.readFileSync(targetPath, "utf-8");
-    ```
-*   **Solution:** Use `path.basename()` to strip directory traversal sequences.
-    ```typescript
-    const safeFile = path.basename(file);
-    const targetPath = path.join(process.cwd(), "public", "documents", safeFile);
-    ```
+**Description:** Any authenticated user can fetch any other user's profile by changing the ID in the URL — no ownership check is performed.
+
+### File: `app/api/profile/[id]/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: No ownership or role check — any user can read any profile
+const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));
+return NextResponse.json({ profile });
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Verify requester owns the profile or is admin/staff
+const tokenUser = verifyJWT(request.headers.get("cookie"));
+if (!tokenUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+if (tokenUser.id !== Number(id) && tokenUser.role === "student") {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+const profile = db.prepare("SELECT * FROM users WHERE id = ?").get(Number(id));
+```
 
 ---
 
-## 7. Open Redirect
+## IDOR — Private Feedback Access
 
-### 7.1 Unvalidated Redirect Parameter
-*   **Vulnerability:** The `?next=` parameter is used for redirection after login without validating the destination.
-*   **Impact:** Attackers can use the trusted CampusCare domain to redirect users to phishing sites.
-*   **Vulnerable Code (`app/login/page.tsx`):**
-    ```typescript
-    const nextUrl = new URLSearchParams(window.location.search).get("next");
-    router.push(nextUrl || "/dashboard");
-    ```
-*   **Solution:** Ensure the redirect URL is a relative path (starts with `/`).
-    ```typescript
-    const nextUrl = new URLSearchParams(window.location.search).get("next");
-    const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/dashboard";
-    router.push(safeNext);
-    ```
+**Description:** Any authenticated user can fetch any other user's private feedback by changing the ticket ID in the URL — no ownership check is performed.
+
+### File: `app/api/feedback/route.ts`
+
+**Vulnerable Code:**
+```typescript
+  // VULNERABLE: no ownership check — any authenticated user can read any record
+  // Record ID=1 is seeded with admin's feedback containing the flag
+  const row = db.prepare(`SELECT * FROM feedback WHERE id = ?`).get(id);
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Verify requester owns the feedback or is admin
+  const row = db.prepare(
+    "SELECT id, content, status, admin_response FROM feedback WHERE id = ? AND (student_id = ? OR ? = 'admin')"
+  ).get(id, user.userId, user.role);
+```
+
+---
+
+## Stored XSS — Feedback Admin Response
+
+**Description:** The admin response on a feedback ticket is rendered using dangerouslySetInnerHTML, executing any injected scripts.
+
+### File: `app/feedback/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+            {/* Admin response rendered as HTML — secondary XSS vector */}
+            {result.admin_response && (
+              <div>
+                <strong>Admin Response:</strong>
+                <div dangerouslySetInnerHTML={{ __html: result.admin_response }} />
+              </div>
+            )}
+```
+
+**Solution (Patch):**
+```typescript
+            {/* FIX: Render admin response safely without innerHTML */}
+            {result.admin_response && (
+              <div>
+                <strong>Admin Response:</strong>
+                <div>{result.admin_response}</div>
+              </div>
+            )}
+```
+
+---
+
+## JWT Forgery — Weak Secret & None Algorithm
+
+**Description:** The JWT verification explicitly allows the 'none' algorithm, enabling signature bypass. The secret is also hardcoded as 'secret', making it trivially brute-forceable.
+
+### File: `lib/auth.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY 1: Weak, hardcoded secret
+const JWT_SECRET = process.env.JWT_SECRET ?? "secret";
+
+// VULNERABILITY 2: 'none' algorithm explicitly allowed in verify
+export function verifyToken(token: string) {
+  try {
+    // algorithms array includes "none" — attacker can strip signature
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256", "none"],
+    }) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+```
+
+**Solution (Patch):**
+```typescript
+// FIX 1: Use a long random secret from environment — never a default
+const JWT_SECRET = process.env.JWT_SECRET!; // throw if missing
+
+// FIX 2: Only allow HS256 — never include 'none'
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    }) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+```
+
+---
+
+## Session Fixation — Token Valid After Logout
+
+**Description:** The logout route only clears the client-side cookie. JWTs are stateless and have no server-side blocklist, so a copied token remains valid until natural expiry.
+
+### File: `app/api/auth/login/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: HttpOnly not set → token readable by JS → can be copied
+res.cookies.set("token", token, {
+  httpOnly: false,  // ← attacker can read via document.cookie
+  path: "/",
+  maxAge: 60 * 60 * 24,
+  sameSite: "lax",
+});
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Set HttpOnly so JS can't read the token
+res.cookies.set("token", token, {
+  httpOnly: true,   // ← inaccessible to document.cookie
+  secure: true,     // ← HTTPS only in production
+  path: "/",
+  maxAge: 60 * 60 * 8,  // shorter-lived sessions
+  sameSite: "strict",
+});
+```
+
+### File: `app/api/auth/logout/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: No server-side token blocklist
+// Clearing the cookie doesn't invalidate the token itself
+// A copied token can be replayed until it expires (24h)
+export async function POST() {
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("token", "", { maxAge: 0, path: "/" });
+  return res;
+}
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Maintain a server-side blocklist of invalidated JTIs
+// On login, embed a unique jti claim; on logout, add it to the blocklist
+const tokenBlocklist = new Set<string>();
+
+export async function POST(req: NextRequest) {
+  const token = req.cookies.get("token")?.value;
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded?.jti) tokenBlocklist.add(decoded.jti);
+  }
+  const res = NextResponse.json({ success: true });
+  res.cookies.set("token", "", { maxAge: 0, path: "/" });
+  return res;
+}
+```
+
+---
+
+## Recon — Sensitive Data Exposure
+
+**Description:** Admin credentials, DB paths, and JWT secrets are exposed in multiple places: HTML source comments, the /.env endpoint, and verbose error messages.
+
+### File: `app/page.tsx`
+
+**Vulnerable Code:**
+```typescript
+{/* =====================================================
+    Developer Notes — TODO: REMOVE BEFORE GO-LIVE
+    =====================================================
+    Admin panel: /admin
+    Admin creds backup: admin / Admin@Campus2025
+    Flag: BREACH{s0urce_c0de_n3v3r_li3s}
+    DB location: ./campus.db
+    Secrets: see /.env
+    JWT_SECRET is set to "secret" for now — change this!
+    =====================================================
+*/}
+```
+
+**Solution (Patch):**
+```typescript
+{/* FIX: Remove ALL developer comments before deployment.
+    Never store credentials, file paths, or secrets in client-side HTML.
+    Use environment variables managed outside the codebase.
+    Run: grep -r "TODO\|FIXME\|password\|secret" ./app before shipping.
+*/}
+```
+
+### File: `app/api/env-file/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: Serves the raw .env file contents to any client
+import { readFileSync } from "fs";
+export async function GET() {
+  const content = readFileSync(".env", "utf-8");
+  return new Response(content, {
+    headers: { "Content-Type": "text/plain" },
+  });
+}
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Remove this endpoint entirely, or restrict to admin-only
+// Never expose .env file contents over HTTP.
+// If needed for debugging, use:
+export async function GET(req: NextRequest) {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+```
+
+---
+
+## Local File Inclusion — Documents
+
+**Description:** The API endpoint uses the user-provided file name directly in fs.readFileSync without preventing directory traversal. Attackers can use ../ to escape the intended directory and read sensitive files.
+
+### File: `app/api/documents/route.ts`
+
+**Vulnerable Code:**
+```typescript
+// VULNERABILITY: Directory traversal possible via unsanitized file parameter
+  const targetPath = path.join(process.cwd(), "public", "documents", file);
+  const content = fs.readFileSync(targetPath, "utf-8");
+```
+
+**Solution (Patch):**
+```typescript
+// FIX: Use path.basename() to strip out directory traversal sequences like ../
+  const safeFile = path.basename(file);
+  const targetPath = path.join(process.cwd(), "public", "documents", safeFile);
+  const content = fs.readFileSync(targetPath, "utf-8");
+```
+
+---
+

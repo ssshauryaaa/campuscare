@@ -1,20 +1,34 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AttackType, LogEntry } from "@/types/defense";
-import { ATTACK_TEMPLATES, COUNTRIES, USER_AGENTS, uid, rnd, fakeIp, fakePort } from "@/constants/campusAttackData";
-import { getPatchedVulns } from "@/lib/logAttack";
+import { uid } from "@/constants/campusAttackData";
 
 // ── usePatchedVulns ───────────────────────────────────────────────────────────
-// Polls localStorage["campus_patched_vulns"] and returns a live Set.
-// Use this in any vulnerable page to conditionally block exploits.
+// Polls the SERVER every 3 seconds so all PCs share the same patch state.
+// Defenders patch on their PC → attackers see enforcement immediately.
 export function usePatchedVulns(): Set<AttackType> {
   const [patched, setPatched] = useState<Set<AttackType>>(new Set());
+
   useEffect(() => {
-    const check = () => setPatched(getPatchedVulns());
-    check();
-    const t = setInterval(check, 500);
-    return () => clearInterval(t);
+    let cancelled = false;
+    async function fetchPatches() {
+      try {
+        const res = await fetch("/api/defense/patches");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) {
+          const s = new Set<AttackType>(data.patched as AttackType[]);
+          setPatched(s);
+          // Keep local cache in sync for instant reads
+          localStorage.setItem("campus_patched_vulns_cache", JSON.stringify(data.patched));
+        }
+      } catch {/* network error — keep previous state */}
+    }
+    fetchPatches();
+    const t = setInterval(fetchPatches, 3000);
+    return () => { cancelled = true; clearInterval(t); };
   }, []);
+
   return patched;
 }
 
@@ -41,13 +55,12 @@ export function useToast() {
 }
 
 // ── useAttackSimulator ────────────────────────────────────────────────────────
-export function useAttackSimulator(patchedTypes: Set<AttackType>, isRunning: boolean) {
+// Shows ONLY real attacks from attacker PCs via server poll.
+// No fake/simulated attacks — every log entry is a genuine exploit attempt.
+export function useAttackSimulator(patchedTypes: Set<AttackType>) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [alertFlash, setAlertFlash] = useState(false);
   const seenRealIds = useRef(new Set<string>());
-  const patchedRef = useRef(patchedTypes);
-
-  useEffect(() => { patchedRef.current = patchedTypes; }, [patchedTypes]);
 
   const flash = useCallback(() => {
     setAlertFlash(true);
@@ -55,72 +68,48 @@ export function useAttackSimulator(patchedTypes: Set<AttackType>, isRunning: boo
   }, []);
 
   const addLog = useCallback((entry: LogEntry) => {
-    setLogs(prev => [entry, ...prev].slice(0, 150));
+    setLogs(prev => [entry, ...prev].slice(0, 200));
     if (entry.severity === "critical") flash();
   }, [flash]);
 
-  const spawnAttack = useCallback(() => {
-    const available = ATTACK_TEMPLATES.filter(t => !patchedRef.current.has(t.type));
-    if (!available.length) return;
-    const tpl = available[rnd(0, available.length)];
-    addLog({
-      ...tpl,
-      id: uid(),
-      ts: Date.now(),
-      ip: fakeIp(),
-      port: fakePort(),
-      country: COUNTRIES[rnd(0, COUNTRIES.length)],
-      userAgent: USER_AGENTS[rnd(0, USER_AGENTS.length)],
-      patched: false,
-      detected: false,
-    });
-  }, [addLog]);
-
-  // Poll real attacks written to localStorage by vulnerable pages
-  // Vulnerable pages call window.__logCampusAttack({ type, payload, endpoint })
-  // which writes to localStorage key "campus_attack_log"
+  // ── Poll REAL attacks from the server (written by attacker PCs) ─────────────
   useEffect(() => {
-    const poll = setInterval(() => {
+    let cancelled = false;
+    async function fetchAttacks() {
       try {
-        const raw = localStorage.getItem("campus_attack_log");
-        if (!raw) return;
-        const events: any[] = JSON.parse(raw);
-        const fresh = events.filter(e => !seenRealIds.current.has(e.id));
+        const res = await fetch("/api/defense/attacks");
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const fresh = (data.attacks as any[]).filter(e => !seenRealIds.current.has(e.id));
         if (!fresh.length) return;
         fresh.forEach(e => seenRealIds.current.add(e.id));
         fresh.forEach(e => {
           if (!e.type) return;
           addLog({
-            id: e.id ?? uid(),
+            id: e.id,
             ts: e.ts ?? Date.now(),
             type: e.type,
             severity: e.severity ?? "high",
-            ip: e.ip ?? "192.168.1.x",
-            port: e.port ?? 3000,
+            ip: e.ip ?? "attacker-pc",
+            port: 3000,
             user: e.user ?? "RedTeam",
             detail: e.detail ?? "Real attack detected",
             endpoint: e.endpoint ?? "/unknown",
             method: e.method ?? "GET",
-            statusCode: e.statusCode ?? 200,
-            userAgent: e.userAgent ?? navigator.userAgent,
+            statusCode: e.status_code ?? 200,
+            userAgent: e.user_agent ?? "Attacker Browser",
             payload: e.payload ?? "",
             country: "LAN",
-            patched: false,
+            patched: patchedTypes.has(e.type),
             detected: false,
           });
         });
-      } catch { /* ignore */ }
-    }, 600);
-    return () => clearInterval(poll);
-  }, [addLog]);
-
-  // Periodic simulated attack spawner — every 7 seconds
-  useEffect(() => {
-    if (!isRunning) return;
-    spawnAttack();
-    const t = setInterval(spawnAttack, 7000);
-    return () => clearInterval(t);
-  }, [isRunning, spawnAttack]);
+      } catch {/* ignore */}
+    }
+    fetchAttacks();
+    const t = setInterval(fetchAttacks, 2000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [addLog, patchedTypes]);
 
   return { logs, setLogs, alertFlash };
 }

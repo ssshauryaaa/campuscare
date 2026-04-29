@@ -23,6 +23,20 @@ function initDb(db: Database.Database) {
       patched_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS attacks (
+      id         TEXT PRIMARY KEY,
+      ts         INTEGER NOT NULL,
+      type       TEXT NOT NULL,
+      severity   TEXT NOT NULL DEFAULT 'high',
+      detail     TEXT,
+      endpoint   TEXT,
+      method     TEXT DEFAULT 'GET',
+      payload    TEXT,
+      ip         TEXT,
+      user_agent TEXT,
+      status_code INTEGER DEFAULT 200
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       username  TEXT NOT NULL,

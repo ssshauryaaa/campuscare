@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CampusCare | Tagore International School",
+  title: "CampusCare",
   description: "Tagore International School — Student Portal powered by Entab CampusCare. Access notices, assignments, results and more.",
 };
 

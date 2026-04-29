@@ -41,8 +41,9 @@ export default function AdminResetPage() {
   const [pwError, setPwError]     = useState(false);
   const [lsState, setLsState]     = useState<Record<string, boolean>>({});
   const [resetting, setResetting] = useState<Category | null>(null);
+  const [dbResetting, setDbResetting] = useState(false);
   const [log, setLog]             = useState<{ ts: string; msg: string; ok: boolean }[]>([]);
-  const [confirm, setConfirm]     = useState<Category | null>(null);
+  const [confirm, setConfirm]     = useState<Category | "db" | null>(null);
   const [mounted, setMounted]     = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -73,6 +74,31 @@ export default function AdminResetPage() {
     setLog(prev => [{ ts, msg, ok }, ...prev].slice(0, 50));
   }
 
+  async function doDbReset() {
+    setDbResetting(true);
+    setConfirm(null);
+    try {
+      addLog("Calling /api/admin/db-reset…");
+      const res = await fetch("/api/admin/db-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: RESET_PASSWORD }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addLog("✓ Database wiped and re-seeded to original CTF state");
+        addLog("✓ notices, feedback, submissions, verification_pins — restored");
+        addLog("✓ patches and attacks tables — cleared");
+      } else {
+        addLog(`✗ DB Reset failed: ${data.error}`, false);
+      }
+    } catch (e: any) {
+      addLog(`✗ Network error: ${e.message}`, false);
+    }
+    setDbResetting(false);
+    refreshState();
+  }
+
   async function doReset(category: Category) {
     setResetting(category);
     setConfirm(null);
@@ -80,16 +106,30 @@ export default function AdminResetPage() {
       ? RESET_KEYS
       : RESET_KEYS.filter(k => k.category === category);
 
-    // Simulate a deliberate delay for UX — feels like a real system operation
+    // 1 — Clear server-side state (patches + attacks DB tables)
+    if (category === "all" || category === "defense") {
+      try {
+        await fetch("/api/defense/patches", { method: "DELETE" });
+        addLog("Cleared: Server-side patches (SQLite)");
+        await new Promise(r => setTimeout(r, 150));
+        await fetch("/api/defense/attacks", { method: "DELETE" });
+        addLog("Cleared: Server-side attack log (SQLite)");
+      } catch {
+        addLog("⚠️ Could not reach server-side reset API", false);
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    // 2 — Clear browser localStorage keys
     for (const { key, label } of toReset) {
-      await new Promise(r => setTimeout(r, 220));
+      await new Promise(r => setTimeout(r, 180));
       const had = !!localStorage.getItem(key);
       localStorage.removeItem(key);
-      if (had) addLog(`Cleared: ${label} (${key})`);
+      if (had) addLog(`Cleared: ${label} (localStorage)`);
       else     addLog(`Skipped: ${label} — already empty`, false);
     }
 
-    addLog(`✓ ${CATEGORY_LABELS[category]} reset complete`, true);
+    addLog(`✓ ${CATEGORY_LABELS[category]} reset complete — all PCs will resync within 3s`, true);
     setResetting(null);
     refreshState();
   }
@@ -181,7 +221,8 @@ export default function AdminResetPage() {
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: "#f87171", marginBottom: 2 }}>CAUTION — Destructive Actions Ahead</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: mono }}>
-              All resets clear browser localStorage. This removes patched vulnerabilities, attack logs, and scanner state. Use between CTF rounds to give teams a clean slate.
+            Clears both the <strong style={{ color: "#f87171" }}>server-side SQLite DB</strong> AND browser localStorage.
+              Use <em>Full DB Reset</em> between rounds to also wipe injected XSS notices, IDOR data, and restore the original seed.
             </div>
           </div>
         </div>
@@ -191,7 +232,39 @@ export default function AdminResetPage() {
           {/* Left: Reset controls */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Full reset — most prominent */}
+            {/* ── DB Reset — most prominent / destructive ─────────────────── */}
+            <div style={{ background: "#161b22", border: "1.5px solid rgba(220,38,38,0.5)", borderRadius: 12, padding: "20px 22px", boxShadow: "0 0 30px rgba(220,38,38,0.08)", marginBottom: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#f87171", marginBottom: 4 }}>🗄️ Full Database Reset</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: mono, lineHeight: 1.6 }}>
+                    Wipes injected XSS notices, IDOR bait data, and restores <em>all</em> mutable tables to original seed.
+                    Also clears patches &amp; attacks. <strong style={{ color: "#fca5a5" }}>Use between rounds.</strong>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
+                    {["notices","feedback","submissions","verification_pins","patches","attacks"].map(t => (
+                      <span key={t} style={{ fontSize: 9, fontFamily: mono, padding: "2px 7px", borderRadius: 4, background: "rgba(220,38,38,0.1)", color: "#f87171", border: "1px solid rgba(220,38,38,0.2)" }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+                {confirm === "db" ? (
+                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    <button onClick={() => setConfirm(null)} style={{ padding: "8px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 7, color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: sans }}>Cancel</button>
+                    <button onClick={doDbReset} style={{ padding: "8px 18px", background: "#7f1d1d", border: "1px solid #dc2626", borderRadius: 7, color: "#fca5a5", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: sans }}>☠️ Confirm DB Wipe</button>
+                  </div>
+                ) : (
+                  <button
+                    disabled={dbResetting || !!resetting}
+                    onClick={() => setConfirm("db")}
+                    style={{ padding: "10px 20px", background: dbResetting ? "#374151" : "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.4)", borderRadius: 8, color: "#f87171", fontSize: 12, fontWeight: 800, cursor: dbResetting ? "not-allowed" : "pointer", fontFamily: sans, flexShrink: 0, opacity: dbResetting ? 0.5 : 1, transition: "all 0.2s", letterSpacing: ".03em" }}
+                  >
+                    {dbResetting ? "Resetting DB…" : "🗄️ Reset DB"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Full env reset */}
             <div style={{ background: "#161b22", border: "1.5px solid rgba(245,130,10,0.3)", borderRadius: 12, padding: "20px 22px", boxShadow: "0 0 30px rgba(245,130,10,0.06)" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
@@ -318,9 +391,9 @@ export default function AdminResetPage() {
           <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", letterSpacing: ".1em", marginBottom: 12, fontFamily: mono }}>ROUND RESET CHECKLIST</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             {[
-              { step: "01", text: "Click \"Reset All\" to clear all CTF state from this browser." },
-              { step: "02", text: "Have all team members refresh the defense dashboard to resync." },
-              { step: "03", text: "Red team can now start exploiting all vulnerabilities again." },
+              { step: "01", text: "Click \"Reset All\" — clears server-side patches & attack logs + this browser's localStorage." },
+              { step: "02", text: "Click \"Reset DB\" — wipes injected XSS notices, IDOR data, and re-seeds the database to original state." },
+              { step: "03", text: "All other PCs resync automatically within 3 seconds — no refresh needed." },
             ].map(({ step, text }) => (
               <div key={step} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8 }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: "rgba(245,130,10,0.3)", fontFamily: mono, marginBottom: 6 }}>{step}</div>

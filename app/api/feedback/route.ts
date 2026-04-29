@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
+function isPatched(db: ReturnType<typeof getDb>, type: string): boolean {
+  return !!db.prepare("SELECT 1 FROM patches WHERE vuln_type = ?").get(type);
+}
+
 // POST — submit feedback (legitimate, authenticated)
 export async function POST(req: NextRequest) {
   const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value;
@@ -25,13 +29,15 @@ export async function POST(req: NextRequest) {
 }
 
 // GET — fetch feedback by ID
-// VULNERABLE: checks only that user is logged in, NOT that they own the record
+// VULNERABLE: no ownership check (IDOR) — any authenticated user can read any ticket
+// PATCH: when idor_feedback is patched, enforces ownership
 export async function GET(req: NextRequest) {
-  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value;
+  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value || req.cookies.get("token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  let decoded: any;
   try {
-    jwt.verify(token, process.env.JWT_SECRET || "secret");
+    decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
@@ -40,14 +46,18 @@ export async function GET(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
   const db = getDb();
+  const idorPatched = isPatched(db, "idor_feedback");
+
   // VULNERABLE: no ownership check — any authenticated user can read any record
   // Record ID=1 is seeded with admin's feedback containing the flag
-  const row = db.prepare(`SELECT * FROM feedback WHERE id = ?`).get(id);
+  const row = db.prepare("SELECT * FROM feedback WHERE id = ?").get(id) as any;
 
-  if (!row) {
-    return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+  if (!row) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+
+  // PATCH — enforce ownership
+  if (idorPatched && decoded.role !== "admin" && row.student_id !== decoded.id) {
+    return NextResponse.json({ error: "Forbidden — you can only view your own tickets" }, { status: 403 });
   }
 
-  // VULNERABLE: returns entire row including sensitive fields
   return NextResponse.json(row);
 }
