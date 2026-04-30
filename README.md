@@ -80,6 +80,8 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
     1. Log in as a standard student (e.g., `student1`).
     2. You are assigned a profile ID (e.g., ID 3). Note your own profile URL: `/profile/3`.
     3. Change the number in the URL to `1` or `2` (`/profile/1`) to view the private profile details (email, role, admission number) of administrators and teachers.
+    4. Scroll to the bottom of the admin profile (`/profile/1`) to find a "Privileged profile access" box containing a base64 string: `QlJFQUNIezFkMHJfNGRtMW5fcHIwZjFsM19wd259`
+    5. Decode this string (e.g., using `atob()` or an online base64 decoder) to reveal the hidden CTF flag: `BREACH{1d0r_4dm1n_pr0f1l3_pwn}`
 
 #### 12. IDOR — Private Feedback Access
 *   **Location:** `/feedback` -> "View Feedback by Ticket ID"
@@ -113,13 +115,16 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
     1. Craft a malicious login link: `<YOUR_DOMAIN_OR_IP>/login?next=https://evil-phishing-domain.com`
     2. If a victim logs in using this link, they will be seamlessly redirected to the external malicious site immediately after authentication.
 
-#### 16. Session Fixation & JWT Weakness
+#### 16. JWT Forgery via LFI Leak
 *   **Location:** Application-wide Cookies
-*   **Vulnerability:** JWTs might lack expiration validation or suffer from weak signing keys.
+*   **Vulnerability:** The application uses JWTs for authentication, but the `JWT_SECRET` is accidentally leaked inside the `computer_science_textbook.txt` file, allowing attackers to forge admin tokens.
 *   **How to Exploit:**
-    1. Open Browser DevTools (F12) -> Application -> Cookies.
-    2. Copy the `jwt` token value.
-    3. You can paste this token into another browser session to hijack the account, or use a tool like `jwt.io` to inspect the payload. If the secret is weak, you can forge a new token with `"role": "admin"`.
+    1. First, exploit the Local File Inclusion (LFI) vulnerability (see below) to read the `computer_science_textbook.txt` file.
+    2. At the bottom of the file, you will find a base64 encoded string: `SldUX1NFQ1JFVD10aGlzaXNicmVhY2g=`
+    3. Decode this string (e.g., using `atob()` or an online tool) to reveal the secret: `JWT_SECRET=thisisbreach`.
+    4. Open Browser DevTools (F12) -> Application -> Cookies, and copy your current `token` value.
+    5. Go to `jwt.io`, paste your token, change the `role` payload to `"admin"`, and sign it using the leaked secret `thisisbreach`.
+    6. Replace your browser cookie with the forged token to hijack the administrator account!
 
 ---
 
