@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { BookOpen, CalendarDays } from "lucide-react";
 
-interface Resource { id: number; title: string; subject: string; class: string; type: string; uploaded_by: string; }
+interface Resource { id: number; title: string; subject: string; class: string; type: string; uploaded_by: string; file?: string; }
 
 const TYPE_META: Record<string, { icon: string; color: string; bg: string }> = {
   textbook: { icon:"📖", color:"#1d4ed8", bg:"rgba(59,130,246,0.08)"  },
@@ -126,7 +126,7 @@ export default function ResourcesPage() {
                               <span style={{ fontSize:10, fontWeight:700, background:meta.bg, color:meta.color, borderRadius:4, padding:"2px 8px" }}>{r.type}</span>
                             </td>
                             <td style={{ padding:"12px 16px" }}>
-                              <a href="#" onClick={e => { e.preventDefault(); alert("File not uploaded yet."); }}
+                              <a href={r.file ? `/api/documents?file=${r.file}` : "#"} target={r.file ? "_blank" : undefined} onClick={e => { if (!r.file) { e.preventDefault(); alert("File not uploaded yet."); } }}
                                 style={{ fontSize:12, fontWeight:700, color:"var(--cc-orange)", textDecoration:"none", border:"1.5px solid rgba(245,130,10,0.3)", padding:"4px 12px", borderRadius:6, transition:"all 0.15s" }}
                                 onMouseEnter={e=>{const t=e.currentTarget as HTMLElement;t.style.background="var(--cc-orange)";t.style.color="#fff"}}
                                 onMouseLeave={e=>{const t=e.currentTarget as HTMLElement;t.style.background="transparent";t.style.color="var(--cc-orange)"}}>

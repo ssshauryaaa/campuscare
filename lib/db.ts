@@ -143,7 +143,8 @@ function initDb(db: Database.Database) {
         ('rate_limit',       'BREACH{n0_r4t3_l1m1t_0tp_byp4ss}',      'medium', 100, 'How many OTP guesses does the portal allow before locking you out?'),
         ('ssti',             'BREACH{sst1_1n_n0t1c3_t3mpl4t3}',        'hard',   150, 'The admin notice template feature renders more than just text.'),
         ('cache_poison',     'BREACH{c4ch3_p01s0n_v14_h3ad3r}',        'medium', 100, 'Some headers the app reads shouldn''t be trusted from the client.'),
-        ('weak_reset',       'BREACH{pr3d1ct4bl3_r3s3t_t0k3n}',        'easy',   50,  'How does the portal generate password reset tokens?');
+        ('weak_reset',       'BREACH{pr3d1ct4bl3_r3s3t_t0k3n}',        'easy',   50,  'How does the portal generate password reset tokens?'),
+        ('idor_notice',      'BREACH{1d0r_n0t1c3_m4g1c}',              'easy',   50,  'Can you find the hidden notice ID?');
     `);
   }
 
@@ -152,6 +153,7 @@ function initDb(db: Database.Database) {
   if (noticeCount === 0) {
     db.exec(`
       INSERT INTO notices (title, content, author, is_hidden) VALUES
+        ('[Teachers Only] System Update', 'Please check ?id=60 for the new staff portal module. Do not share this ID with students.', 'admin', 0),
         ('Welcome to CampusCare',         'This portal provides access to academic resources, notices, and student information.', 'admin',    0),
         ('Parent-Teacher Meeting',        'PTM scheduled for all classes on 15th April. Parents requested 9 AM–1 PM.',            'principal',0),
         ('Annual Sports Day',             'Sports day on 20th April. Register with your class teacher.',                          'teacher1', 0),

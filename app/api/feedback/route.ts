@@ -8,10 +8,10 @@ function isPatched(db: ReturnType<typeof getDb>, type: string): boolean {
 
 // POST — submit feedback (legitimate, authenticated)
 export async function POST(req: NextRequest) {
-  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value;
+  const token = req.headers.get("authorization")?.split(" ")[1] || req.cookies.get("jwt")?.value || req.cookies.get("token")?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let user: { userId: number; username: string; email: string; admission_no: string; role?: string };
+  let user: { id: number; username: string; email: string; role?: string };
   try {
     user = jwt.verify(token, process.env.JWT_SECRET || "secret") as any;
   } catch {
@@ -20,10 +20,14 @@ export async function POST(req: NextRequest) {
 
   const { content } = await req.json();
   const db = getDb();
+  
+  const dbUser = db.prepare("SELECT admission_no FROM users WHERE id = ?").get(user.id) as any;
+  const admissionNo = dbUser?.admission_no || null;
+
   const result = db.prepare(
     `INSERT INTO feedback (student_id, username, email, admission_no, content, status, admin_response)
      VALUES (?, ?, ?, ?, ?, 'pending', NULL)`
-  ).run(user.userId, user.username, user.email, user.admission_no, content);
+  ).run(user.id, user.username, user.email, admissionNo, content);
 
   return NextResponse.json({ id: result.lastInsertRowid });
 }

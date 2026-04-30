@@ -13,12 +13,11 @@ function SubmissionsContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!studentId) {
-      setError("studentId parameter required in URL");
-      setLoading(false);
-      return;
+    let url = `/api/assignments/submissions`;
+    if (studentId) {
+      url += `?studentId=${studentId}`;
     }
-    fetch(`/api/assignments/submissions?studentId=${studentId}`)
+    fetch(url)
       .then(r => r.json())
       .then(d => {
         if (d.error) setError(d.error);
@@ -64,7 +63,7 @@ function SubmissionsContent() {
               ))}
               {submissions.length === 0 && !error && (
                  <div style={{ padding:40, textAlign:"center", border:"2px dashed var(--cc-border)", borderRadius:8, color:"var(--cc-text-muted)" }}>
-                   No submissions found for Student ID {studentId}.
+                   No submissions found{studentId ? ` for Student ID ${studentId}` : ""}.
                  </div>
               )}
             </div>

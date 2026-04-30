@@ -40,3 +40,15 @@ export async function POST(req: NextRequest) {
   db.prepare("INSERT INTO notices (title, content, author) VALUES (?, ?, ?)").run(title, processedContent, user.username);
   return NextResponse.json({ success: true, processed_preview: processedContent });
 }
+
+export async function DELETE(req: NextRequest) {
+  const user = getSessionUserFromRequest(req);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (user.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+
+  const { id } = await req.json();
+  const db = getDb();
+  
+  db.prepare("DELETE FROM notices WHERE id = ?").run(id);
+  return NextResponse.json({ success: true });
+}

@@ -1,0 +1,4 @@
+Mathematics Formulas (General)
+Algebra: (a+b)^2 = a^2 + 2ab + b^2
+Trigonometry: sin^2(x) + cos^2(x) = 1
+Calculus: d/dx(x^n) = n * x^(n-1)

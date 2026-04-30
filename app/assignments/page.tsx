@@ -45,6 +45,7 @@ export default function AssignmentsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [userId, setUserId] = useState<number | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   const CLASSES = ["All", "X", "XI", "XII"];
 
@@ -57,6 +58,7 @@ export default function AssignmentsPage() {
     try {
       const payload = JSON.parse(atob(match[1].split(".")[1]));
       setUserId(payload.id);
+      setRole(payload.role);
     } catch {}
     fetch("/api/assignments")
       .then((r) => r.json())
@@ -92,8 +94,8 @@ export default function AssignmentsPage() {
             )}
             {userId && (
               <>
-                <Link href={`/assignments/submissions?studentId=${userId}`} style={{ fontSize:12, fontWeight:800, color:"var(--cc-orange)", textDecoration:"none", padding:"6px 14px", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:8 }}>
-                  View My Submissions ↗
+                <Link href={role === "admin" ? `/assignments/submissions` : `/assignments/submissions?studentId=${userId}`} style={{ fontSize:12, fontWeight:800, color:"var(--cc-orange)", textDecoration:"none", padding:"6px 14px", border:"1.5px solid rgba(245,130,10,0.3)", borderRadius:8 }}>
+                  {role === "admin" ? "View All Submissions ↗" : "View My Submissions ↗"}
                 </Link>
                 {/* Note: change studentId in URL to view other students' records */}
               </>

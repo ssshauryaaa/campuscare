@@ -9,7 +9,7 @@ type FileNode = {
 
 const FILE_TREE: FileNode[] = [
   { name: "lib", children: [
-    { name: "auth.ts",      path: "lib/auth.ts",      badge: "VULN",   badgeColor: "#ef4444" },
+    { name: "auth.ts",      path: "lib/auth.ts" },
     { name: "db.ts",        path: "lib/db.ts",         badge: "SCHEMA", badgeColor: "#8b5cf6" },
     { name: "logAttack.ts", path: "lib/logAttack.ts" },
   ]},

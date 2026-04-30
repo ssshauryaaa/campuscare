@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Bell, Search, BookOpen, Library,
   Flag, Trophy, KeyRound, ShieldAlert, LogOut,
-  ChevronRight, GraduationCap, FileText
+  ChevronRight, GraduationCap, FileText, MessageSquare
 } from "lucide-react";
 
 interface User { id: number; username: string; role: string; }
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/assignments", label: "Assignments", icon: BookOpen },
   { href: "/resources", label: "Resources", icon: Library },
   { href: "/jwt-debug", label: "JWT Debugger", icon: KeyRound },
+  { href: "/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -30,6 +31,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/assignments": "Assignments",
   "/resources": "Resources",
   "/jwt-debug": "JWT Debugger",
+  "/feedback": "Feedback",
 };
 
 export default function Navbar() {

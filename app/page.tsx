@@ -25,7 +25,7 @@ const ANNOUNCEMENTS = [
   { date: "15", month: "Apr", text: "Parent-Teacher Meeting scheduled for Block A students", type: "PTM", typeColor: "#1d4ed8", typeBg: "#eff6ff" },
   { date: "20", month: "Apr", text: "Annual Sports Day to be held at the Main Ground", type: "Event", typeColor: "#059669", typeBg: "#ecfdf5" },
   { date: "22", month: "Apr", text: "Semester exam timetable is now available for download", type: "Exam", typeColor: "#b45309", typeBg: "#fffbeb" },
-  { date: "8", month: "May", text: "Breach@trix Cybersecurity Finals — Registration open", type: "Contest", typeColor: "#7c3aed", typeBg: "#f5f3ff" },
+  { date: "12", month: "May", text: "Breach@trix Cybersecurity Finals — Registration open", type: "Contest", typeColor: "#7c3aed", typeBg: "#f5f3ff" },
   { date: "12", month: "May", text: "Inter-school debate competition — sign-ups now open", type: "Event", typeColor: "#059669", typeBg: "#ecfdf5" },
   { date: "18", month: "May", text: "Summer break begins — classes resume 1st July 2026", type: "Holiday", typeColor: "#dc2626", typeBg: "#fef2f2" },
 ];
@@ -149,8 +149,8 @@ export default function Home() {
       <div style={{ background: "#0f172a", padding: "9px 0", overflow: "hidden" }}>
         <div className="ticker-wrap">
           <div className="ticker-inner" style={{ fontSize: 12, color: "rgba(255,255,255,.55)", letterSpacing: ".02em" }}>
-            {["PTM: 15 April — Block A", "Sports Day: 20 April at Main Ground", "Exam timetable now available", "Breach@trix CTF Finals — 8 May", "Annual Day ticket booking opens 1 May", "Term 2 results declared — check portal", "Eco Warriors drive — 25 April", "Coding Club open house — Fri 3 PM"].concat(
-              ["PTM: 15 April — Block A", "Sports Day: 20 April at Main Ground", "Exam timetable now available", "Breach@trix CTF Finals — 8 May", "Annual Day ticket booking opens 1 May", "Term 2 results declared — check portal", "Eco Warriors drive — 25 April", "Coding Club open house — Fri 3 PM"]
+            {["PTM: 15 April — Block A", "Sports Day: 20 April at Main Ground", "Exam timetable now available", "Breach@trix Finals — 12 May", "Annual Day ticket booking opens 1 May", "Term 2 results declared — check portal", "Eco Warriors drive — 25 April", "Coding Club open house — Fri 3 PM"].concat(
+              ["PTM: 15 April — Block A", "Sports Day: 20 April at Main Ground", "Exam timetable now available", "Breach@trix Finals — 12 May", "Annual Day ticket booking opens 1 May", "Term 2 results declared — check portal", "Eco Warriors drive — 25 April", "Coding Club open house — Fri 3 PM"]
             ).map((item, i) => (
               <span key={i} style={{ marginRight: 64 }}>· &nbsp;{item}</span>
             ))}

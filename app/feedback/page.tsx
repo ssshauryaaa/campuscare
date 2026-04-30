@@ -16,24 +16,17 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(false);
   const patchedVulns = usePatchedVulns();
 
-  // Fetch the logged-in user's own feedback on load
   useEffect(() => {
-    const token = localStorage.getItem("jwt");
-    if (!token) return;
-    fetch("/api/feedback/mine", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    fetch("/api/feedback/mine")
       .then((r) => r.json())
       .then((data) => setMyFeedback(data.feedback || []));
   }, [submitted]);
 
   async function handleSubmit() {
-    const token = localStorage.getItem("jwt");
     const res = await fetch("/api/feedback", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ content }),
     });
@@ -50,8 +43,6 @@ export default function FeedbackPage() {
     setResult(null);
     if (!viewId) return;
     setLoading(true);
-
-    const token = localStorage.getItem("jwt");
 
     // Check if IDOR is patched — if so, log it but show blocked message
     if (patchedVulns.has("idor_feedback") && myFeedback.length > 0) {
@@ -70,9 +61,7 @@ export default function FeedbackPage() {
       }
     }
 
-    const res = await fetch(`/api/feedback?id=${viewId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch(`/api/feedback?id=${viewId}`);
     const data = await res.json();
     setLoading(false);
     if (data.error) return setError(data.error);

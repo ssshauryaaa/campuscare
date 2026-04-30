@@ -30,12 +30,11 @@ export default function NoticesPage() {
 
   useEffect(() => {
     // VULNERABILITY: client-side URL param enables debug features
-    // visiting /notices?debug=true or /notices?showAll=true activates it
     const params = new URLSearchParams(window.location.search);
     const isDebug = params.get("debug") === "true" || params.get("showAll") === "true";
     setDebugMode(isDebug);
 
-    fetch("/api/notices")
+    fetch(`/api/notices${window.location.search}`)
       .then(r => r.json())
       .then(d => {
         const fetchedNotices = d.notices || [];
@@ -96,70 +95,128 @@ export default function NoticesPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        :root {
+          --bg: #eef0f4;
+          --surface: #ffffff;
+          --surface-hover: #f7f8fb;
+          --border: #e2e5ea;
+          --border-strong: #c8cdd6;
+          --text: #111827;
+          --text-muted: #6b7280;
+          --text-faint: #9ca3af;
+          --blue: #1d4ed8;
+          --red: #dc2626;
+          --amber: #d97706;
+          --green: #16a34a;
+          --green-bg: rgba(22,163,74,0.08);
+          --shadow-card: 0 2px 8px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+          --shadow-card-hover: 0 6px 20px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+          --shadow-card-open: 0 8px 28px rgba(0,0,0,0.11), 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         .notices-root {
-          background: #f4f3ef;
           min-height: 100vh;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Inter', -apple-system, sans-serif;
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* ── Subtle right-side background decoration ── */
+        .notices-root::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          right: 0;
+          width: 38vw;
+          height: 100vh;
+          background:
+            radial-gradient(ellipse 60% 50% at 80% 30%, rgba(99,130,220,0.10) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 60% at 90% 75%, rgba(139,92,246,0.07) 0%, transparent 65%),
+            linear-gradient(160deg, rgba(224,231,255,0.18) 0%, transparent 60%);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .notices-root::after {
+          content: '';
+          position: fixed;
+          top: 56px;
+          right: 0;
+          width: 38vw;
+          height: 100vh;
+          background-image:
+            radial-gradient(circle, rgba(100,116,180,0.13) 1.5px, transparent 1.5px);
+          background-size: 28px 28px;
+          mask-image: linear-gradient(to left, rgba(0,0,0,0.55) 0%, transparent 80%);
+          -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.55) 0%, transparent 80%);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .notices-bg {
+          position: fixed;
+          inset: 0;
+          background: var(--bg);
+          z-index: -1;
         }
 
         .notices-main {
           margin-left: 240px;
           padding-top: 56px;
+          position: relative;
+          z-index: 1;
         }
 
         .notices-inner {
-          padding: 40px 36px;
-          max-width: 860px;
+          padding: 28px 32px 48px;
+          max-width: 760px;
         }
 
-        /* ── Header ── */
-        .notices-header {
+        /* ── Page Header ── */
+        .page-header {
           display: flex;
-          align-items: flex-end;
+          align-items: center;
           justify-content: space-between;
-          margin-bottom: 32px;
-          padding-bottom: 24px;
-          border-bottom: 2px solid #1a3c6e;
+          margin-bottom: 22px;
+          padding-bottom: 18px;
+          border-bottom: 1px solid var(--border);
         }
 
-        .notices-header-left {}
-
-        .notices-eyebrow {
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
+        .page-eyebrow {
+          font-size: 11px;
           font-weight: 500;
-          letter-spacing: 2.5px;
+          color: var(--text-faint);
           text-transform: uppercase;
-          color: #8a8070;
-          margin: 0 0 6px;
+          letter-spacing: 0.8px;
+          margin-bottom: 4px;
         }
 
-        .notices-title {
-          font-family: 'Playfair Display', Georgia, serif;
-          font-size: 34px;
-          font-weight: 900;
-          color: #1a3c6e;
-          margin: 0;
-          line-height: 1.1;
-          letter-spacing: -0.5px;
+        .page-title {
+          font-size: 22px;
+          font-weight: 700;
+          color: var(--text);
+          letter-spacing: -0.3px;
         }
 
-        .notices-live-badge {
+        .live-pill {
           display: flex;
           align-items: center;
           gap: 7px;
-          background: #fff;
-          border: 1.5px solid rgba(22,163,74,0.25);
-          padding: 6px 14px;
-          border-radius: 24px;
-          box-shadow: 0 1px 4px rgba(22,163,74,0.08);
+          background: var(--green-bg);
+          border: 1px solid rgba(22,163,74,0.2);
+          padding: 6px 12px;
+          border-radius: 6px;
         }
 
         .live-dot-wrap {
           position: relative;
           display: inline-flex;
+          align-items: center;
+          justify-content: center;
           width: 8px;
           height: 8px;
         }
@@ -168,37 +225,36 @@ export default function NoticesPage() {
           position: absolute;
           inset: 0;
           border-radius: 50%;
-          background: #16a34a;
-          animation: ping 1s cubic-bezier(0,0,0.2,1) infinite;
-          opacity: 0.6;
+          background: var(--green);
+          animation: ping 1.4s cubic-bezier(0,0,0.2,1) infinite;
+          opacity: 0.45;
         }
 
         .live-dot-solid {
           position: relative;
-          width: 8px;
-          height: 8px;
+          width: 7px;
+          height: 7px;
           border-radius: 50%;
-          background: #16a34a;
+          background: var(--green);
           display: inline-block;
         }
 
         .live-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          font-weight: 500;
-          color: #16a34a;
-          text-transform: uppercase;
-          letter-spacing: 1.5px;
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--green);
+          letter-spacing: 0.3px;
         }
 
         /* ── Debug Panel ── */
         .debug-panel {
-          background: #0a1a0a;
-          border: 1px solid rgba(34,197,94,0.3);
-          border-radius: 10px;
-          padding: 18px 20px;
-          margin-bottom: 24px;
-          font-family: 'DM Mono', monospace;
+          background: #0d1a0d;
+          border: 1px solid rgba(74,222,128,0.18);
+          border-left: 3px solid #22c55e;
+          border-radius: 8px;
+          padding: 14px 16px;
+          margin-bottom: 16px;
+          font-family: 'IBM Plex Mono', monospace;
         }
 
         .debug-panel-label {
@@ -216,121 +272,132 @@ export default function NoticesPage() {
           white-space: pre-wrap;
           word-break: break-all;
           margin: 0 0 10px;
+          line-height: 1.6;
         }
 
         .debug-panel-footer {
           font-size: 10px;
-          color: #4ade80;
-          opacity: 0.7;
+          color: rgba(74,222,128,0.55);
+          padding-top: 8px;
+          border-top: 1px solid rgba(74,222,128,0.1);
         }
 
-        .debug-panel-footer a {
-          color: #4ade80;
-          text-decoration: underline;
-        }
+        .debug-panel-footer a { color: #4ade80; text-decoration: underline; }
 
         /* ── Search ── */
-        .search-wrap {
-          position: relative;
-          margin-bottom: 6px;
-        }
+        .search-section { margin-bottom: 14px; }
+
+        .search-wrap { position: relative; }
 
         .search-icon {
           position: absolute;
-          left: 15px;
+          left: 12px;
           top: 50%;
           transform: translateY(-50%);
-          font-size: 15px;
-          color: #9a9080;
+          font-size: 13px;
+          color: var(--text-faint);
           pointer-events: none;
+          line-height: 1;
         }
 
         .search-input {
           width: 100%;
-          background: #fff;
-          border: 1.5px solid #dbd8d0;
-          border-radius: 10px;
-          padding: 12px 42px 12px 42px;
-          font-size: 13px;
-          font-family: 'DM Sans', sans-serif;
-          color: #1a1a1a;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 10px 38px 10px 36px;
+          font-size: 13.5px;
+          font-family: 'Inter', sans-serif;
+          color: var(--text);
           outline: none;
-          box-sizing: border-box;
-          transition: border-color 0.18s, box-shadow 0.18s;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          box-shadow: var(--shadow-card);
         }
 
         .search-input:focus {
-          border-color: #1a3c6e;
-          box-shadow: 0 0 0 3px rgba(26,60,110,0.08);
+          border-color: var(--blue);
+          box-shadow: 0 0 0 3px rgba(29,78,216,0.1), var(--shadow-card);
         }
 
-        .search-input::placeholder {
-          color: #b0a898;
-        }
+        .search-input::placeholder { color: var(--text-faint); }
 
         .search-clear {
           position: absolute;
-          right: 14px;
+          right: 10px;
           top: 50%;
           transform: translateY(-50%);
-          background: none;
-          border: none;
-          font-size: 18px;
-          color: #9a9080;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          color: var(--text-muted);
           cursor: pointer;
           line-height: 1;
-          padding: 0;
+          transition: background 0.12s;
         }
+
+        .search-clear:hover { background: var(--border); }
 
         .search-hint {
-          font-family: 'DM Mono', monospace;
+          font-family: 'IBM Plex Mono', monospace;
           font-size: 11px;
-          color: #9a9080;
-          margin: 6px 0 14px 2px;
+          color: var(--text-faint);
+          margin: 6px 0 0 2px;
         }
 
-        .search-hint strong {
-          color: #c2410c;
-          font-weight: 500;
-        }
+        .search-hint strong { color: var(--red); font-weight: 500; }
 
         /* ── Patch Banners ── */
         .patch-banners {
-          margin-bottom: 18px;
-        }
-
-        /* ── Notice Feed ── */
-        .notice-feed {
+          margin-bottom: 14px;
           display: flex;
           flex-direction: column;
-          gap: 0;
-          border: 1.5px solid #dbd8d0;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #fff;
+          gap: 6px;
         }
 
-        /* Skeleton */
-        .skeleton-item {
-          height: 72px;
-          background: #fff;
-          border-bottom: 1px solid #edeae3;
+        /* ── Feed Meta ── */
+        .feed-meta {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+          padding: 0 2px;
         }
 
-        .skeleton-item:last-child { border-bottom: none; }
+        .feed-meta-text {
+          font-size: 11.5px;
+          color: var(--text-faint);
+          font-weight: 500;
+        }
 
-        .skeleton-inner {
-          margin: 18px 22px;
+        /* ── Notice Feed — individual cards with gap ── */
+        .notice-feed {
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
 
+        /* Skeleton */
+        .skeleton-item {
+          padding: 18px 20px;
+          border-radius: 10px;
+          background: var(--surface);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          box-shadow: var(--shadow-card);
+        }
+
         .skel-line {
-          height: 12px;
-          background: linear-gradient(90deg, #edeae3 25%, #f4f3ef 50%, #edeae3 75%);
+          height: 10px;
+          background: linear-gradient(90deg, #edf0f4 25%, #f4f6f9 50%, #edf0f4 75%);
           background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
+          animation: shimmer 1.5s infinite;
           border-radius: 4px;
         }
 
@@ -341,172 +408,195 @@ export default function NoticesPage() {
 
         /* Empty State */
         .empty-state {
-          padding: 64px 0;
+          padding: 56px 0;
           text-align: center;
-          background: #fff;
+          background: var(--surface);
+          border-radius: 12px;
+          box-shadow: var(--shadow-card);
         }
 
-        .empty-icon {
-          font-size: 38px;
-          margin-bottom: 12px;
-          opacity: 0.3;
-        }
+        .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.2; display: block; }
 
-        .empty-text {
-          font-size: 14px;
-          color: #9a9080;
-          margin: 0 0 14px;
-        }
+        .empty-text { font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px; }
 
         .empty-clear {
           font-size: 12px;
-          color: #c2410c;
+          color: var(--blue);
           background: none;
           border: none;
           cursor: pointer;
           text-decoration: underline;
-          font-family: 'DM Mono', monospace;
+          font-family: 'Inter', sans-serif;
         }
 
-        /* ── Notice Card ── */
+        /* ── Notice Card — standalone card ── */
         .notice-card {
-          border-bottom: 1px solid #edeae3;
-          transition: background 0.15s;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: var(--shadow-card);
+          transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .notice-card:last-child {
-          border-bottom: none;
+        .notice-card:hover {
+          box-shadow: var(--shadow-card-hover);
+          transform: translateY(-1px);
+          border-color: var(--border-strong);
         }
 
         .notice-card.expanded {
-          background: #fafaf8;
+          box-shadow: var(--shadow-card-open);
+          border-color: var(--border-strong);
+          transform: translateY(-1px);
         }
 
         .notice-toggle-btn {
           width: 100%;
           text-align: left;
-          padding: 18px 22px;
+          padding: 16px 20px;
           background: none;
           border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 14px;
+          transition: background 0.12s;
         }
 
-        .notice-toggle-btn:hover {
-          background: #f9f8f5;
-        }
+        .notice-toggle-btn:hover { background: var(--surface-hover); }
 
         .notice-accent-bar {
           width: 3px;
-          height: 40px;
           border-radius: 2px;
           flex-shrink: 0;
+          align-self: stretch;
+          min-height: 40px;
         }
 
-        .notice-meta-col {
-          flex: 1;
-          min-width: 0;
-        }
+        .notice-meta-col { flex: 1; min-width: 0; }
 
         .notice-top-row {
           display: flex;
           align-items: center;
           gap: 8px;
           margin-bottom: 6px;
-          flex-wrap: wrap;
         }
 
         .notice-title-text {
-          font-family: 'DM Sans', sans-serif;
           font-size: 14px;
-          font-weight: 700;
-          color: #1a1a1a;
+          font-weight: 600;
+          color: var(--text);
           margin: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          letter-spacing: -0.1px;
         }
 
         .notice-new-badge {
           font-size: 9px;
           font-weight: 700;
-          background: rgba(22,163,74,0.09);
-          color: #16a34a;
+          background: var(--green-bg);
+          color: var(--green);
           border: 1px solid rgba(22,163,74,0.2);
           padding: 2px 7px;
-          border-radius: 20px;
+          border-radius: 4px;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.8px;
           flex-shrink: 0;
         }
 
         .notice-bottom-row {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
 
         .notice-author-chip {
           font-size: 11px;
-          font-weight: 600;
-          padding: 2px 9px;
-          border-radius: 20px;
-          font-family: 'DM Mono', monospace;
+          font-weight: 500;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .notice-sep {
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: var(--border-strong);
+          flex-shrink: 0;
         }
 
         .notice-date {
           font-size: 11px;
-          color: #9a9080;
-          font-family: 'DM Mono', monospace;
+          color: var(--text-faint);
+          font-family: 'IBM Plex Mono', monospace;
         }
 
         .notice-chevron {
-          color: #b0a898;
-          font-size: 11px;
-          transition: transform 0.25s;
+          color: var(--border-strong);
+          font-size: 9px;
+          transition: transform 0.28s cubic-bezier(0.34,1.2,0.64,1), color 0.15s;
           flex-shrink: 0;
         }
 
         .notice-chevron.open {
           transform: rotate(180deg);
+          color: var(--text-muted);
+        }
+
+        /* ── Animated body ── */
+        .notice-body-wrap {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        .notice-body-wrap.open {
+          grid-template-rows: 1fr;
+        }
+
+        .notice-body-overflow {
+          overflow: hidden;
         }
 
         .notice-body {
-          padding: 0 22px 20px 43px;
-          border-top: 1px solid #edeae3;
+          border-top: 1px solid var(--border);
+          background: #f8f9fb;
         }
 
         .notice-body-inner {
-          padding-top: 16px;
+          padding: 16px 20px 18px 37px;
+          opacity: 0;
+          transform: translateY(-4px);
+          transition: opacity 0.22s ease 0.05s, transform 0.22s ease 0.05s;
+        }
+
+        .notice-body-wrap.open .notice-body-inner {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .notice-content-text {
           font-size: 13.5px;
-          color: #3a3530;
-          line-height: 1.75;
+          color: var(--text-muted);
+          line-height: 1.72;
           margin: 0;
-          font-family: 'DM Sans', sans-serif;
         }
 
         /* ── Footer ── */
         .notices-footer {
-          margin-top: 20px;
-          padding-top: 16px;
+          margin-top: 18px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 10px;
-          font-family: 'DM Mono', monospace;
-          color: #b0a898;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          font-size: 11px;
+          color: var(--text-faint);
         }
 
         .notices-footer a {
-          color: #f4f3ef;
+          color: transparent;
           font-size: 10px;
           text-decoration: none;
         }
@@ -514,20 +604,40 @@ export default function NoticesPage() {
         @keyframes ping {
           75%, 100% { transform: scale(2); opacity: 0; }
         }
+
+        /* ── Card entrance animation ── */
+        @keyframes cardIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .notice-card {
+          animation: cardIn 0.3s ease both;
+        }
+
+        .notice-card:nth-child(1) { animation-delay: 0ms; }
+        .notice-card:nth-child(2) { animation-delay: 50ms; }
+        .notice-card:nth-child(3) { animation-delay: 100ms; }
+        .notice-card:nth-child(4) { animation-delay: 150ms; }
+        .notice-card:nth-child(5) { animation-delay: 200ms; }
+        .notice-card:nth-child(6) { animation-delay: 250ms; }
+        .notice-card:nth-child(7) { animation-delay: 300ms; }
+        .notice-card:nth-child(8) { animation-delay: 350ms; }
       `}</style>
 
       <div className="notices-root">
+        <div className="notices-bg" />
         <Navbar />
         <div className="notices-main">
           <main className="notices-inner">
 
-            {/* ── Header ── */}
-            <div className="notices-header">
-              <div className="notices-header-left">
-                <p className="notices-eyebrow">Tagore International · Official Bulletin</p>
-                <h1 className="notices-title">Notice Board</h1>
+            {/* ── Page Header ── */}
+            <div className="page-header">
+              <div className="page-header-left">
+                <p className="page-eyebrow">Tagore International · Official Bulletin</p>
+                <h1 className="page-title">Notice Board</h1>
               </div>
-              <div className="notices-live-badge">
+              <div className="live-pill">
                 <span className="live-dot-wrap">
                   <span className="live-dot-ping" />
                   <span className="live-dot-solid" />
@@ -537,12 +647,7 @@ export default function NoticesPage() {
             </div>
 
             {/* ── Debug Panel ──
-                VULNERABILITY: Debug panel — activated via ?debug=true in the URL
-                Dumps the raw API response object to screen including:
-                - all field names returned by the API
-                - total notice count
-                - link to the admin notices endpoint
-                Attack: visit /notices?debug=true to see the full API response structure */}
+                VULNERABILITY: Debug panel — activated via ?debug=true in the URL */}
             {debugMode && rawApiDump && (
               <div className="debug-panel">
                 <div className="debug-panel-label">⚠ Debug Mode Active — Raw API Response</div>
@@ -559,37 +664,39 @@ export default function NoticesPage() {
             )}
 
             {/* ── Search ── */}
-            <div className="search-wrap">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                value={filter}
-                onChange={e => setFilter(e.target.value)}
-                placeholder="Search bulletin keywords…"
-                className="search-input"
-              />
-              {filter && (
-                <button onClick={() => setFilter("")} className="search-clear">×</button>
-              )}
-            </div>
-
-            {/* VULNERABILITY: Reflected XSS — filter value injected raw into DOM via dangerouslySetInnerHTML */}
-            {filter && (
-              <div>
-                {patchedVulns.has("xss_notices") ? (
-                  <p className="search-hint">
-                    Searching for: <strong>{filter}</strong>
-                  </p>
-                ) : (
-                  <p
-                    className="search-hint"
-                    dangerouslySetInnerHTML={{
-                      __html: `Searching for: <strong>${filter}</strong>`
-                    }}
-                  />
+            <div className="search-section">
+              <div className="search-wrap">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  value={filter}
+                  onChange={e => setFilter(e.target.value)}
+                  placeholder="Search bulletin keywords…"
+                  className="search-input"
+                />
+                {filter && (
+                  <button onClick={() => setFilter("")} className="search-clear">×</button>
                 )}
               </div>
-            )}
+
+              {/* VULNERABILITY: Reflected XSS — filter value injected raw into DOM via dangerouslySetInnerHTML */}
+              {filter && (
+                <div>
+                  {patchedVulns.has("xss_notices") ? (
+                    <p className="search-hint">
+                      Searching for: <strong>{filter}</strong>
+                    </p>
+                  ) : (
+                    <p
+                      className="search-hint"
+                      dangerouslySetInnerHTML={{
+                        __html: `Searching for: <strong>${filter}</strong>`
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* ── Patch Banners ── */}
             <div className="patch-banners">
@@ -600,19 +707,28 @@ export default function NoticesPage() {
             <div id="filter-display" className="text-sm text-gray-500 mb-4" />
 
             {/* ── Notice Feed ── */}
+            {!loading && (
+              <div className="feed-meta">
+                <span className="feed-meta-text">
+                  {filtered.length} notice{filtered.length !== 1 ? "s" : ""}
+                </span>
+                <span className="feed-meta-text">
+                  Updated {new Date().toLocaleTimeString("en-IN")}
+                </span>
+              </div>
+            )}
+
             <div className="notice-feed">
               {loading ? (
                 [1, 2, 3, 4].map(i => (
                   <div key={i} className="skeleton-item">
-                    <div className="skeleton-inner">
-                      <div className="skel-line" style={{ width: "55%" }} />
-                      <div className="skel-line" style={{ width: "25%" }} />
-                    </div>
+                    <div className="skel-line" style={{ width: `${45 + i * 10}%` }} />
+                    <div className="skel-line" style={{ width: "22%" }} />
                   </div>
                 ))
               ) : filtered.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">📑</div>
+                  <span className="empty-icon">📑</span>
                   <p className="empty-text">No bulletins match your current filter.</p>
                   {filter && (
                     <button onClick={() => setFilter("")} className="empty-clear">
@@ -638,8 +754,8 @@ export default function NoticesPage() {
             {/* ── Footer ── */}
             {!loading && (
               <footer className="notices-footer">
-                <span>{filtered.length} notice{filtered.length !== 1 ? "s" : ""}</span>
-                <span>Updated {new Date().toLocaleTimeString("en-IN")}</span>
+                <span>Tagore International School</span>
+                <span>Official Bulletin Board</span>
                 {/* VULNERABILITY: [sys] link visible in page source — hints at debug mode */}
                 {!debugMode && (
                   <a href="?debug=true" title="sys">[sys]</a>
@@ -668,9 +784,9 @@ function NoticeCard({
   const isNew = (Date.now() - new Date(notice.created_at).getTime()) < 86400000 * 3;
 
   const getAccent = (author: string) => {
-    if (author === "admin") return "#dc2626";
-    if (author === "principal") return "#d97706";
-    return "#1a3c6e";
+    if (author === "admin") return "#b91c1c";
+    if (author === "principal") return "#b45309";
+    return "#1b3f7a";
   };
 
   const accent = getAccent(notice.author);
@@ -678,16 +794,13 @@ function NoticeCard({
   return (
     <div className={`notice-card${isExpanded ? " expanded" : ""}`}>
       <button onClick={onToggle} className="notice-toggle-btn">
-        {/* Colored accent bar replaces left-border approach for cleaner look */}
         <span className="notice-accent-bar" style={{ background: accent }} />
 
         <div className="notice-meta-col">
           <div className="notice-top-row">
             {isXssPatched ? (
-              /* PATCHED: safe text rendering */
               <h3 className="notice-title-text">{notice.title}</h3>
             ) : (
-              /* VULNERABILITY: Reflected XSS via dangerouslySetInnerHTML */
               <h3
                 className="notice-title-text"
                 dangerouslySetInnerHTML={{ __html: highlightFn(notice.title, highlight) }}
@@ -698,29 +811,28 @@ function NoticeCard({
 
           <div className="notice-bottom-row">
             {isXssPatched ? (
-              /* PATCHED: safe span for author */
               <span
                 className="notice-author-chip"
                 style={{
-                  background: accent + "18",
+                  background: accent + "15",
                   color: accent,
-                  border: `1px solid ${accent}30`,
+                  border: `1px solid ${accent}28`,
                 }}
               >
                 {notice.author}
               </span>
             ) : (
-              /* VULNERABILITY: Stored XSS surface — author field rendered as raw HTML */
               <span
                 className="notice-author-chip"
                 style={{
-                  background: accent + "18",
+                  background: accent + "15",
                   color: accent,
-                  border: `1px solid ${accent}30`,
+                  border: `1px solid ${accent}28`,
                 }}
                 dangerouslySetInnerHTML={{ __html: notice.author }}
               />
             )}
+            <span className="notice-sep" />
             <span className="notice-date">
               {new Date(notice.created_at).toLocaleDateString("en-IN")}
             </span>
@@ -730,22 +842,22 @@ function NoticeCard({
         <span className={`notice-chevron${isExpanded ? " open" : ""}`}>▼</span>
       </button>
 
-      {isExpanded && (
-        <div className="notice-body">
-          <div className="notice-body-inner">
-            {isXssPatched ? (
-              /* PATCHED: safe text rendering for content */
-              <p className="notice-content-text">{notice.content}</p>
-            ) : (
-              /* VULNERABILITY: Stored XSS — notice content rendered as raw HTML */
-              <p
-                className="notice-content-text"
-                dangerouslySetInnerHTML={{ __html: highlightFn(notice.content, highlight) }}
-              />
-            )}
+      <div className={`notice-body-wrap${isExpanded ? " open" : ""}`}>
+        <div className="notice-body-overflow">
+          <div className="notice-body">
+            <div className="notice-body-inner">
+              {isXssPatched ? (
+                <p className="notice-content-text">{notice.content}</p>
+              ) : (
+                <p
+                  className="notice-content-text"
+                  dangerouslySetInnerHTML={{ __html: highlightFn(notice.content, highlight) }}
+                />
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,8 @@
 // lib/auth.ts
-// VULNERABILITY: Weak JWT secret + accepts 'none' algorithm
 
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-// VULNERABILITY: "secret" is in rockyou.txt — easily brute-forced with hashcat
 export const JWT_SECRET = process.env.JWT_SECRET || "secret";
 
 export interface TokenPayload {
@@ -23,7 +21,6 @@ export function signToken(payload: Omit<TokenPayload, "iat" | "exp">): string {
 
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    // VULNERABILITY: explicitly allows 'none' algorithm
     return jwt.verify(token, JWT_SECRET, {
       algorithms: ["HS256", "none"],
     }) as TokenPayload;

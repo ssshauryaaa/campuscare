@@ -55,6 +55,18 @@ export default function AdminPage() {
     }
   };
 
+  const deleteNotice = async (id: number) => {
+    if (!confirm(`Delete notice #${id}?`)) return;
+    const res = await fetch("/api/admin/notices", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if ((await res.json()).success) {
+      fetch("/api/admin/notices").then(r => r.json()).then(d => setNotices(d.notices || []));
+    }
+  };
+
   const uploadDocument = async () => {
     if (!docUpload.filename || !docUpload.content) return;
     const res = await fetch("/api/admin/documents", {
@@ -266,7 +278,7 @@ export default function AdminPage() {
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead><tr style={{ background: "var(--cc-navy)" }}>
-                    {["#", "Title", "Content", "Author", "Visibility", "Date"].map(th)}
+                    {["#", "Title", "Content", "Author", "Visibility", "Date", "Actions"].map(th)}
                   </tr></thead>
                   <tbody>
                     {notices.length === 0 ? (
@@ -279,6 +291,12 @@ export default function AdminPage() {
                         {td(n.author)}
                         {td(n.is_hidden ? <span className="badge badge-red">HIDDEN</span> : <span className="badge badge-green">PUBLIC</span>)}
                         {td(new Date(n.created_at).toLocaleDateString("en-IN"), true)}
+                        {td(
+                          <button onClick={() => deleteNotice(n.id)}
+                            style={{ padding: "4px 10px", fontSize: 11, fontWeight: 700, background: "rgba(220,38,38,0.06)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.15)", borderRadius: 5, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                            <Trash2 size={11} /> Delete
+                          </button>
+                        )}
                       </tr>
                     ))}
                   </tbody>

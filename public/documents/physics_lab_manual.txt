@@ -1,0 +1,3 @@
+Physics Lab Manual (Class XII)
+Experiment 1: To determine resistance per cm of a given wire by plotting a graph for potential difference versus current.
+Experiment 2: To find resistance of a given wire using metre bridge and hence determine the resistivity (specific resistance) of its material.
