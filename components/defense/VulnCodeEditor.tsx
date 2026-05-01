@@ -262,6 +262,19 @@ export function VulnCodeEditor({ type, onClose, onApply }: Props) {
               Cancel
             </button>
             <button
+              onClick={() => {
+                setLoading(true);
+                setTimeout(() => { setLoading(false); onApply(); }, 800);
+              }}
+              disabled={loading}
+              style={{
+                padding: "10px 18px", border: "1px solid rgba(245,130,10,0.4)", borderRadius: 8, color: "#f5820a", background: "rgba(245,130,10,0.1)",
+                fontSize: 13, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: sans, transition: "all 0.2s"
+              }}
+            >
+              Mark Patched (Manual)
+            </button>
+            <button
               onClick={handleApply}
               disabled={loading || !allAddressed}
               title={!allAddressed ? "Fix all files before applying" : ""}

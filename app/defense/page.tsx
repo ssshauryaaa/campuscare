@@ -36,6 +36,37 @@ export default function DefensePage() {
     showToast("Threat acknowledged — go to Investigate tab to view the code and patch it");
   }
 
+  function acknowledgeByType(type: AttackType) {
+    const existing = logs.find(l => l.type === type);
+    if (existing) {
+      if (existing.detected) {
+        showToast("Already in investigation queue", false);
+        return;
+      }
+      acknowledge(existing.id);
+    } else {
+      // Create a dummy log entry to represent the vulnerability found by the scanner
+      const newLog = {
+        id: "scanner-" + type,
+        ts: Date.now(),
+        type,
+        severity: "high",
+        detail: `Scanner found: ${TYPE_LABELS[type]}`,
+        endpoint: "/api/scanner",
+        method: "PROBE",
+        payload: "Vulnerability scan discovery",
+        ip: "127.0.0.1",
+        user: "Assessment Engine",
+        user_agent: "CampusCare_DPI/2.4",
+        status_code: 200,
+        detected: true,
+        patched: false,
+      };
+      setLogs(prev => [newLog, ...prev]);
+      showToast(`${TYPE_LABELS[type]} acknowledged — check the Investigate tab`);
+    }
+  }
+
   // ── Mark patched ─────────────────────────────────────────────────────────────
   function markPatched(type: AttackType) {
     if (patchedTypes.has(type)) { showToast("Already patched", false); return; }
@@ -250,8 +281,10 @@ export default function DefensePage() {
 
         {activeTab === "scan" && (
           <ScanTab
+            logs={logs}
             patchedTypes={patchedTypes}
             onScanComplete={handleScanComplete}
+            onAcknowledgeByType={acknowledgeByType}
           />
         )}
 

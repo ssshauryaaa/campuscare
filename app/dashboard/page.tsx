@@ -52,8 +52,25 @@ export default function Dashboard() {
     if (!match) { router.push("/login"); return; }
 
     try {
-      const u = JSON.parse(atob(match[1].split(".")[1]));
+      const parts = match[1].split(".");
+      const payloadStr = parts[1];
+      // Fix base64url decoding padding issues
+      const base64 = payloadStr.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, "=");
+      const u = JSON.parse(atob(padded));
       setUser(u);
+
+      // Log JWT forgery if they escalated to admin without a signature
+      const isForged = parts.length < 3 || !parts[2];
+      if (isForged && u.role === "admin") {
+        logRealAttack({ 
+          type: "jwt_forge", 
+          severity: "critical", 
+          detail: "Admin privilege escalation via forged unsigned JWT (alg: none)", 
+          endpoint: "/dashboard", 
+          payload: `role: ${u.role}` 
+        });
+      }
 
       Promise.all([
         fetch("/api/notices").then(r => r.json())
@@ -983,7 +1000,7 @@ export default function Dashboard() {
                           /* PATCHED: safe text rendering */
                           <h4 className="db-bulletin-title">{n.title}</h4>
                         ) : (
-                          /* VULNERABILITY: notice titles on dashboard rendered as raw HTML */
+                          /* notice titles on dashboard rendered as raw HTML */
                           <h4
                             className="db-bulletin-title"
                             dangerouslySetInnerHTML={{ __html: n.title }}

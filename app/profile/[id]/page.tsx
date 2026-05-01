@@ -53,9 +53,11 @@ export default function ProfilePage() {
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
     if (!match) { router.push("/login"); return; }
+    let currentSessionId: number | null = null;
     try {
       const payload = JSON.parse(atob(match[1].split(".")[1]));
       setSession(payload.id);
+      currentSessionId = payload.id;
     } catch { router.push("/login"); return; }
 
     if (!id) return;
@@ -73,6 +75,10 @@ export default function ProfilePage() {
           setError("");
           if (/<script|onerror|javascript:/i.test(d.profile.full_name)) {
             logRealAttack({ type: "xss_profile", severity: "high", detail: "Stored XSS via full_name", endpoint: `/profile/${id}`, payload: d.profile.full_name });
+          }
+          // Log IDOR attack if user is viewing a profile that isn't theirs
+          if (currentSessionId && d.profile.id !== currentSessionId) {
+            logRealAttack({ type: "idor_profile", severity: "high", detail: "Unauthorized profile access (IDOR)", endpoint: `/api/profile/${id}`, payload: `Target ID: ${id}` });
           }
         } else {
           setError(d.error || "User not found");

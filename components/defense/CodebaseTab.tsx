@@ -9,7 +9,7 @@ type FileNode = {
 
 const FILE_TREE: FileNode[] = [
   { name: "lib", children: [
-    { name: "auth.ts",      path: "lib/auth.ts" },
+    { name: "auth.ts",      path: "lib/auth.ts",       badge: "VULN", badgeColor: "#ef4444" },
     { name: "db.ts",        path: "lib/db.ts",         badge: "SCHEMA", badgeColor: "#8b5cf6" },
     { name: "logAttack.ts", path: "lib/logAttack.ts" },
   ]},
@@ -35,7 +35,7 @@ const FILE_TREE: FileNode[] = [
     { name: "feedback/page.tsx",     path: "app/feedback/page.tsx",     badge: "VULN", badgeColor: "#ef4444" },
     { name: "profile/[id]/page.tsx", path: "app/profile/[id]/page.tsx" },
     { name: "documents/page.tsx",    path: "app/documents/page.tsx" },
-    { name: "jwt-debug/page.tsx",    path: "app/jwt-debug/page.tsx" },
+    { name: "jwt-debug/page.tsx",    path: "app/jwt-debug/page.tsx",    badge: "VULN", badgeColor: "#ef4444" },
   ]},
   { name: "config", children: [
     { name: "next.config.ts", path: "next.config.ts", badge: "CONFIG", badgeColor: "#f59e0b" },

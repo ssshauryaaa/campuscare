@@ -1,0 +1,17 @@
+MIDTERM EXAMINATION - CONFIDENTIAL ANSWER KEY
+Course: CS-101 Introduction to Computer Science
+Term: 2025
+
+Q1. What is the output of the following SQL query? SELECT 1=1;
+Ans: True. (Note for graders: Also accept 1. Many students discover this while playing with SQL injection in the search bar!)
+
+Q2. What does JWT stand for?
+Ans: JSON Web Token. 
+
+Q3. How do you securely store a JWT?
+Ans: In an HttpOnly, Secure cookie. (If a student writes "localStorage", deduct 5 points as it is vulnerable to XSS.)
+
+Q4. Explain IDOR.
+Ans: Insecure Direct Object Reference occurs when an application provides direct access to objects based on user-supplied input without proper authorization checks.
+
+[END OF DOCUMENT - DO NOT DISTRIBUTE]

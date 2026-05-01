@@ -40,6 +40,7 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [hasCritical, setHasCritical] = useState(false);
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
+  const [isForged, setIsForged] = useState(false);
 
   useEffect(() => {
     // Poll for unacknowledged critical attacks
@@ -61,13 +62,18 @@ export default function Navbar() {
   // Sync user state with JWT in cookies
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
-    if (!match) { setUser(null); return; }
+    if (!match) { setUser(null); setIsForged(false); return; }
     try {
       // Classic CTF hint: Client-side JWT decoding via atob
-      const payload = JSON.parse(atob(match[1].split(".")[1]));
+      const parts = match[1].split(".");
+      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, "=");
+      const payload = JSON.parse(atob(padded));
       setUser(payload);
+      setIsForged(parts.length < 3 || !parts[2]);
     } catch {
       setUser(null);
+      setIsForged(false);
     }
   }, [pathname]);
 
@@ -513,22 +519,39 @@ export default function Navbar() {
               <div className="nb-avatar">{initials}</div>
               <div className="nb-user-info">
                 <div className="nb-user-name">{user.username}</div>
-                <span
-                  className={`nb-user-role ${user.role === "admin" ? "nb-user-role-admin" :
-                      user.role === "staff" ? "nb-user-role-staff" :
-                        "nb-user-role-default"
-                    }`}
-                >
-                  {user.role}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span
+                    className={`nb-user-role ${user.role === "admin" ? "nb-user-role-admin" :
+                        user.role === "staff" ? "nb-user-role-staff" :
+                          "nb-user-role-default"
+                      }`}
+                  >
+                    {user.role}
+                  </span>
+                  {isForged && (
+                    <span style={{ 
+                      fontSize: 8, fontWeight: 800, background: "#ef4444", color: "#fff", 
+                      padding: "2px 5px", borderRadius: 4, letterSpacing: 0.5 
+                    }}>
+                      JWT FORGED
+                    </span>
+                  )}
+                </div>
               </div>
               <ChevronRight className="nb-user-chevron" style={{ width: 14, height: 14 }} />
             </Link>
 
-            <button onClick={logout} className="nb-logout-btn">
-              <LogOut style={{ width: 14, height: 14 }} />
-              Sign Out
-            </button>
+            {isForged ? (
+              <button onClick={logout} className="nb-logout-btn" style={{ color: "#ef4444" }}>
+                <KeyRound style={{ width: 14, height: 14 }} />
+                Revert Forgery
+              </button>
+            ) : (
+              <button onClick={logout} className="nb-logout-btn">
+                <LogOut style={{ width: 14, height: 14 }} />
+                Sign Out
+              </button>
+            )}
           </div>
         )}
       </aside>

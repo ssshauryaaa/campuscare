@@ -138,9 +138,11 @@ export const VULN_SNIPPETS: Partial<Record<AttackType, VulnInfo>> = {
       {
         path: "app/dashboard/page.tsx",
         label: "dashboard/page.tsx",
-        vulnerableSnippet: `<h4
-  dangerouslySetInnerHTML={{ __html: n.title }}
-/>`,
+        vulnerableSnippet: `                          /* notice titles on dashboard rendered as raw HTML */
+                          <h4
+                            className="db-bulletin-title"
+                            dangerouslySetInnerHTML={{ __html: n.title }}
+                          />`,
         fixHint: `// FIX: Use safe React text rendering
 <h4>{n.title}</h4>`,
       },
@@ -351,6 +353,31 @@ export function verifyToken(token: string) {
   }
 }`,
       },
+      {
+        path: "app/jwt-debug/page.tsx",
+        label: "jwt-debug/page.tsx",
+        vulnerableSnippet: `  // VULNERABILITY: No role check in useEffect allows any user to access this tool
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\\s*)token=([^;]+)/);
+    if (!match) return;
+    const t = decodeURIComponent(match[1]);
+    setToken(t);
+  }, []);`,
+        fixHint: `// FIX: Add an authorization check to ensure only admins can access this tool.
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\\s*)token=([^;]+)/);
+    if (!match) { router.push("/login"); return; }
+    
+    // Parse token and check role
+    const payload = JSON.parse(atob(match[1].split(".")[1]));
+    if (payload.role !== "admin") {
+      router.push("/dashboard"); // Redirect non-admins
+      return;
+    }
+    const t = decodeURIComponent(match[1]);
+    setToken(t);
+  }, []);`,
+      },
     ],
   },
 
@@ -435,7 +462,7 @@ export async function POST(req: NextRequest) {
       {
         path: "app/api/env-file/route.ts",
         label: "env-file/route.ts",
-        vulnerableSnippet: `// VULNERABILITY: Serves the raw .env file contents to any client
+        vulnerableSnippet: `// Serves the raw .env file contents to any client
 import { readFileSync } from "fs";
 export async function GET() {
   const content = readFileSync(".env", "utf-8");
@@ -715,6 +742,40 @@ export function getSessionUserFromRequest(req: Request): TokenPayload | null {
     return null;
   }
 }`,
+    `// app/jwt-debug/page.tsx
+"use client";
+import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
+import { Terminal, ExternalLink } from "lucide-react";
+import { usePatchedVulns } from "@/hooks/useCampusDefense";
+
+export default function JwtDebugPage() {
+  const [token, setToken] = useState("");
+  const [decoded, setDecoded] = useState<any>(null);
+  const patchedVulns = usePatchedVulns();
+
+  // VULNERABILITY: No role check in useEffect allows any user to access this tool
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\\s*)token=([^;]+)/);
+    if (!match) return;
+    const t = decodeURIComponent(match[1]);
+    setToken(t);
+  }, []);
+
+  const verify = async () => {
+    if (patchedVulns.has("jwt_forge")) return;
+    // ... verification logic
+  };
+
+  return (
+    <div>
+      <Navbar />
+      <h1>JWT Debugger</h1>
+      <p>Internal utility for token inspection. Warning: Remove from production.</p>
+      {/* UI implementation... */}
+    </div>
+  );
+}`
   ],
 
   session_fixation: [

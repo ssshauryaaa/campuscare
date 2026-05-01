@@ -1,0 +1,18 @@
+=========================================
+      CAMPUS CARE STAFF DIRECTORY
+=========================================
+
+[ADMINISTRATION]
+Principal: Dr. R. K. Sharma (r.sharma@campuscare.local)
+Vice Principal: Mrs. S. Gupta (s.gupta@campuscare.local)
+System Admin: system_admin (admin@campuscare.local)
+Phone Ext: 101, 102, 105
+
+[FACULTY]
+Mathematics: Mr. P. Kumar (Ext: 201)
+Physics: Mrs. L. Iyer (Ext: 202)
+Computer Science: Mr. A. Nair (Ext: 203)
+English: Ms. T. D'Souza (Ext: 204)
+
+NOTE: For IT support, please contact the System Admin. 
+Default passwords for new staff accounts are set to: Welcome@2025

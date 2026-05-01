@@ -21,8 +21,18 @@ export function signToken(payload: Omit<TokenPayload, "iat" | "exp">): string {
 
 export function verifyToken(token: string): TokenPayload | null {
   try {
+    // In modern jsonwebtoken, passing a secret requires a signature even if "none" is allowed.
+    // If we want to simulate the vulnerable behavior of accepting unsigned tokens,
+    // we must check the decoded algorithm first, or pass no secret when allowing 'none'.
+    const decodedUnsafe = jwt.decode(token, { complete: true });
+    
+    if (decodedUnsafe?.header?.alg === "none") {
+      // Simulate vulnerable fallback to 'none' algorithm
+      return jwt.verify(token, "", { algorithms: ["none"] }) as TokenPayload;
+    }
+
     return jwt.verify(token, JWT_SECRET, {
-      algorithms: ["HS256", "none"],
+      algorithms: ["HS256"],
     }) as TokenPayload;
   } catch {
     return null;

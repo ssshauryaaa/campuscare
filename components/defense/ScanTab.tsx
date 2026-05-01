@@ -1,24 +1,26 @@
 "use client";
 import React from "react";
-import type { AttackType } from "@/types/defense";
+import type { AttackType, LogEntry } from "@/types/defense";
 import { VulnerabilityScanner } from "@/components/defense/VulnerabilityScanner";
 
 type Props = {
+  logs: LogEntry[];
   patchedTypes: Set<AttackType>;
   onScanComplete: (pts: number) => void;
+  onAcknowledgeByType?: (type: AttackType) => void;
 };
 
-export function ScanTab({ patchedTypes, onScanComplete }: Props) {
+export function ScanTab({ logs, patchedTypes, onScanComplete, onAcknowledgeByType }: Props) {
   return (
     <div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden", position: "relative" }}>
       {/* Render the scanner inline, not as a modal overlay */}
-      <ScanInline patchedTypes={patchedTypes} onScanComplete={onScanComplete} />
+      <ScanInline logs={logs} patchedTypes={patchedTypes} onScanComplete={onScanComplete} onAcknowledgeByType={onAcknowledgeByType} />
     </div>
   );
 }
 
 // Wraps VulnerabilityScanner so it renders inline (no fixed positioning)
-function ScanInline({ patchedTypes, onScanComplete }: Props) {
+function ScanInline({ logs, patchedTypes, onScanComplete, onAcknowledgeByType }: Props) {
   // We need a version without fixed overlay; we replicate the inner content
   // by just using the existing component in a scoped container that overrides fixed
   return (
@@ -48,9 +50,11 @@ function ScanInline({ patchedTypes, onScanComplete }: Props) {
       `}</style>
       <div className="scan-tab-inner" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         <VulnerabilityScanner
+          logs={logs}
           patchedTypes={patchedTypes}
           onClose={() => {/* no-op: no modal to close */}}
           onScanComplete={onScanComplete}
+          onAcknowledge={onAcknowledgeByType}
         />
       </div>
     </div>

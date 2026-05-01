@@ -42,6 +42,10 @@ export default function JwtDebugPage() {
   const [verifyRes, setVerifyRes] = useState<any>(null);
   const [verifying, setVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editorMode, setEditorMode] = useState<"raw" | "builder">("raw");
+  const [builderHeader, setBuilderHeader] = useState("");
+  const [builderPayload, setBuilderPayload] = useState("");
+  const [builderSig, setBuilderSig] = useState("");
   const patchedVulns = usePatchedVulns();
 
   useEffect(() => {
@@ -69,6 +73,29 @@ export default function JwtDebugPage() {
     setVerifyRes(null);
   };
 
+  const loadIntoBuilder = () => {
+    if (decoded) {
+      setBuilderHeader(JSON.stringify(decoded.header, null, 2));
+      setBuilderPayload(JSON.stringify(decoded.payload, null, 2));
+      setBuilderSig(decoded.sig || "");
+      setEditorMode("builder");
+    }
+  };
+
+  const compileBuilder = () => {
+    try {
+      const hStr = JSON.stringify(JSON.parse(builderHeader));
+      const pStr = JSON.stringify(JSON.parse(builderPayload));
+      const h = btoa(hStr).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+      const p = btoa(pStr).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+      const newToken = `${h}.${p}.${builderSig}`;
+      handleCustomChange(newToken);
+      setEditorMode("raw");
+    } catch (e) {
+      alert("Invalid JSON in Header or Payload");
+    }
+  };
+
   const verify = async () => {
     // If jwt_forge is patched, block the verify and show message
     if (patchedVulns.has("jwt_forge")) {
@@ -77,7 +104,7 @@ export default function JwtDebugPage() {
     }
     setVerifying(true);
     try {
-      const res = await fetch("/api/auth/verify", {
+      const res = await fetch("/api/jwt/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: custom }),
@@ -142,6 +169,11 @@ export default function JwtDebugPage() {
                   <span style={{ color:"var(--cc-border)" }}>.</span>
                   <span style={{ color:"#dc2626" }}>{token.split(".")[2]}</span>
                 </div>
+                <div style={{ display:"flex", justifyContent:"flex-end", marginBottom: 12 }}>
+                  <button onClick={loadIntoBuilder} style={{ background:"var(--cc-navy)", color:"#fff", border:"none", borderRadius:6, padding:"6px 12px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                    Load into Interactive Builder
+                  </button>
+                </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                   <JsonBlock data={decoded.header}  title="Header"  />
                   <JsonBlock data={decoded.payload} title="Payload" />
@@ -154,23 +186,51 @@ export default function JwtDebugPage() {
           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:20 }}>
             <div style={{ display:"flex", flexDirection:"column" as any, gap:0 }}>
               <div style={{ background:"#fff", borderRadius:12, border:"1px solid var(--cc-border)", padding:22, boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
-                <label style={{ fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5, display:"block", marginBottom:12 }}>
-                  Custom Token Tester
-                </label>
-                <textarea
-                  value={custom}
-                  onChange={e => handleCustomChange(e.target.value)}
-                  rows={4}
-                  placeholder="Paste JWT here..."
-                  style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"11px 14px", fontFamily:"'DM Mono',monospace", fontSize:12, color:"var(--cc-text)", outline:"none", resize:"vertical", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
-                  onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")}
-                  onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}
-                />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <label style={{ fontSize:10, fontWeight:800, color:"var(--cc-navy)", textTransform:"uppercase", letterSpacing:1.5 }}>
+                    Custom Token Tester
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => setEditorMode("raw")} style={{ fontSize: 10, padding: "4px 8px", borderRadius: 4, border: "1px solid var(--cc-border)", background: editorMode === "raw" ? "var(--cc-navy)" : "#fff", color: editorMode === "raw" ? "#fff" : "var(--cc-text)", cursor: "pointer" }}>Raw</button>
+                    <button onClick={() => setEditorMode("builder")} style={{ fontSize: 10, padding: "4px 8px", borderRadius: 4, border: "1px solid var(--cc-border)", background: editorMode === "builder" ? "var(--cc-navy)" : "#fff", color: editorMode === "builder" ? "#fff" : "var(--cc-text)", cursor: "pointer" }}>Builder</button>
+                  </div>
+                </div>
 
-                {customDec && (
-                  <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <JsonBlock data={customDec.header}  title="Decoded Header"  />
-                    <JsonBlock data={customDec.payload} title="Decoded Payload" />
+                {editorMode === "raw" ? (
+                  <>
+                    <textarea
+                      value={custom}
+                      onChange={e => handleCustomChange(e.target.value)}
+                      rows={4}
+                      placeholder="Paste JWT here..."
+                      style={{ width:"100%", border:"1.5px solid var(--cc-border)", borderRadius:8, padding:"11px 14px", fontFamily:"'DM Mono',monospace", fontSize:12, color:"var(--cc-text)", outline:"none", resize:"vertical", boxSizing:"border-box", transition:"border-color 0.2s", background:"#fafafa" }}
+                      onFocus={e=>(e.target.style.borderColor="var(--cc-navy)")}
+                      onBlur={e=>(e.target.style.borderColor="var(--cc-border)")}
+                    />
+                    {customDec && (
+                      <div style={{ marginTop:14, display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                        <JsonBlock data={customDec.header}  title="Decoded Header"  />
+                        <JsonBlock data={customDec.payload} title="Decoded Payload" />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)" }}>HEADER (JSON)</label>
+                        <textarea value={builderHeader} onChange={e => setBuilderHeader(e.target.value)} rows={5} style={{ width:"100%", border:"1px solid var(--cc-border)", borderRadius:6, padding:"8px", fontFamily:"'DM Mono',monospace", fontSize:11 }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)" }}>PAYLOAD (JSON)</label>
+                        <textarea value={builderPayload} onChange={e => setBuilderPayload(e.target.value)} rows={5} style={{ width:"100%", border:"1px solid var(--cc-border)", borderRadius:6, padding:"8px", fontFamily:"'DM Mono',monospace", fontSize:11 }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize:10, fontWeight:700, color:"var(--cc-text-muted)" }}>SIGNATURE (leave blank to strip)</label>
+                      <input type="text" value={builderSig} onChange={e => setBuilderSig(e.target.value)} style={{ width:"100%", border:"1px solid var(--cc-border)", borderRadius:6, padding:"8px", fontFamily:"'DM Mono',monospace", fontSize:11 }} />
+                    </div>
+                    <button onClick={compileBuilder} style={{ background:"var(--cc-orange)", color:"#fff", border:"none", borderRadius:6, padding:"8px", fontSize:12, fontWeight:700, cursor:"pointer" }}>Compile Token string</button>
                   </div>
                 )}
 
@@ -184,9 +244,14 @@ export default function JwtDebugPage() {
                   </button>
                   <button
                     onClick={() => {
-                      document.cookie = `token=${custom}; path=/; max-age=86400`;
+                      const cleanToken = custom.trim();
+                      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                      document.cookie = `token=${cleanToken}; path=/; max-age=86400; SameSite=Lax;`;
                       setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                      setTimeout(() => {
+                        setCopied(false);
+                        window.location.href = "/dashboard";
+                      }, 500);
                     }}
                     style={{ padding:"11px 20px", border:"1.5px solid var(--cc-navy)", borderRadius:8, background:"transparent", color:"var(--cc-navy)", fontSize:13, fontWeight:700, cursor:"pointer", transition:"all 0.2s" }}
                     onMouseEnter={e=>{const t=e.currentTarget as HTMLElement;t.style.background="var(--cc-navy)";t.style.color="#fff"}}
