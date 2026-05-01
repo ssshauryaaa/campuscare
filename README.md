@@ -115,16 +115,21 @@ CampusCare is packed with vulnerabilities across multiple categories. Here is a 
     1. Craft a malicious login link: `<YOUR_DOMAIN_OR_IP>/login?next=https://evil-phishing-domain.com`
     2. If a victim logs in using this link, they will be seamlessly redirected to the external malicious site immediately after authentication.
 
-#### 16. JWT Forgery via LFI Leak
-*   **Location:** Application-wide Cookies
-*   **Vulnerability:** The application uses JWTs for authentication, but the `JWT_SECRET` is accidentally leaked inside the `computer_science_textbook.txt` file, allowing attackers to forge admin tokens.
+#### 16. JWT Forgery (Algorithm Confusion & Leak)
+*   **Location:** `/jwt-debug` and Application-wide Cookies
+*   **Vulnerability:** The application's JWT implementation is flawed in two ways: it accepts the `none` algorithm (unprotected tokens) and uses a hardcoded, leakable secret.
 *   **How to Exploit:**
-    1. First, exploit the Local File Inclusion (LFI) vulnerability (see below) to read the `computer_science_textbook.txt` file.
-    2. At the bottom of the file, you will find a base64 encoded string: `SldUX1NFQ1JFVD10aGlzaXNicmVhY2g=`
-    3. Decode this string (e.g., using `atob()` or an online tool) to reveal the secret: `JWT_SECRET=thisisbreach`.
-    4. Open Browser DevTools (F12) -> Application -> Cookies, and copy your current `token` value.
-    5. Go to `jwt.io`, paste your token, change the `role` payload to `"admin"`, and sign it using the leaked secret `thisisbreach`.
-    6. Replace your browser cookie with the forged token to hijack the administrator account!
+    1.  **Algorithm Confusion (Easy):** 
+        - Navigate to the hidden `/jwt-debug` developer utility.
+        - Load your current token into the **Interactive Builder**.
+        - Change the header `alg` to `"none"`.
+        - Change the payload `role` to `"admin"`.
+        - Strip the signature (leave it blank), click **Compile**, then **Apply Cookie**.
+        - You will be granted admin access without needing a secret!
+    2.  **Secret Recovery (Harder):** 
+        - Use the LFI vulnerability to read `.env` or `computer_science_textbook.txt` to find the `JWT_SECRET` (`thisisbreach`).
+        - Forge a valid `HS256` token using an external tool like `jwt.io` or the built-in debugger with the secret.
+    3.  **Visual Indicator:** If successful, a red **JWT FORGED** tag will appear next to your profile icon in the navigation bar.
 
 ---
 
@@ -148,9 +153,9 @@ The **Blue Team Defense Dashboard** (`/defense`) has been overhauled into a prof
 ### 🗂️ 5-Tab Command Center
 *   **📡 Live Logs:** Real-time intrusion detection. Watch simulated and manual attack traffic. Click any row to acknowledge the threat and triage it for investigation.
 *   **🔍 Investigate:** Your active threat queue. Each card reveals attack details and provides access to the **Full File Source Viewer** and the **Patch IDE**.
-*   **🛡️ Vuln Scan:** An integrated vulnerability scanner that identifies weak endpoints in real-time.
+*   **🛡️ Vuln Scan:** An integrated vulnerability scanner. Once a scan completes, you can click **Investigate →** next to any finding to instantly move it to your investigation queue.
 *   **🧰 Tools:** A defender's utility belt:
-    *   **JWT Decoder:** Analyze intercepted tokens for `alg: none` weaknesses and forged claims.
+    *   **JWT Debugger:** An "internal" tool accidentally left in production (viewable at `/jwt-debug`). Use it to test token integrity and understand how attackers manipulate claims.
     *   **Request Log:** Reconstruct raw HTTP requests (Headers, Payloads, IPs) as they appear over the wire.
     *   **Quick Reference:** A built-in encyclopedia on how to detect, exploit, and fix every vulnerability in the app.
 *   **📁 Codebase:** A read-only **VS Code-style Explorer**. Browse the entire backend source code and explore the **SQLite Database Schema** to identify sensitive tables and weak column definitions.
@@ -162,6 +167,7 @@ Remediation now requires deeper analysis and hunting:
 3.  **Patch (CampusCare IDE):**
     *   **Full Context View:** The IDE shows the complete source file on the left.
     *   **Precision Patching:** Identify the vulnerable lines and write the secure replacement on the right.
+    *   **Manual Review Override:** For complex vulnerabilities or configuration-based fixes (like deleting the `jwt-debug` page), use the **Mark Patched (Manual)** button to bypass the diff engine and secure the endpoint immediately.
     *   **Deploy & Enforce:** Deploying the patch earns points (e.g., +100 pts) and system-wide protection.
 
 ### 🛡️ Dynamic Patch Enforcement
